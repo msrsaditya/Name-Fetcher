@@ -386,7 +386,8 @@
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .copy-option-submenu-container:hover > .copy-options-level2,
-        .copy-option-submenu-container:focus-within > .copy-options-level2 {
+        .copy-option-submenu-container:focus-within > .copy-options-level2,
+        .copy-option-submenu-container.submenu-open > .copy-options-level2 {
             display: block;
         }
         .episode-list {
@@ -977,6 +978,11 @@
                     if (toggleBtn.classList.contains('copied') || toggleBtn.classList.contains('error')) return;
                     const isHidden = copyOptions.hidden;
                     const closeMenu = () => {
+                        const submenuContainer = copyOptions.querySelector('.submenu-open');
+                        if (submenuContainer) {
+                           submenuContainer.classList.remove('submenu-open');
+                           submenuContainer.querySelector('[aria-haspopup]').setAttribute('aria-expanded', 'false');
+                        }
                         copyOptions.hidden = true;
                         toggleBtn.classList.remove('dropdown-open');
                         document.removeEventListener('click', handleOutsideClick);
@@ -998,7 +1004,14 @@
                     return;
                 }
                 const copyOptionBtn = target.closest('.copy-option');
-                if (copyOptionBtn && !copyOptionBtn.hasAttribute('aria-haspopup')) {
+                if (copyOptionBtn) {
+                    if (copyOptionBtn.hasAttribute('aria-haspopup')) {
+                        e.preventDefault();
+                        const submenuContainer = copyOptionBtn.parentElement;
+                        const isExpanded = submenuContainer.classList.toggle('submenu-open');
+                        copyOptionBtn.setAttribute('aria-expanded', isExpanded);
+                        return;
+                    }
                     const copyContainer = target.closest('.copy-container');
                     const copyType = copyOptionBtn.dataset.copyType;
                     let textToCopy;
