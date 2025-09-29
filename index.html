@@ -17,6 +17,7 @@
             --accent-color: #4f46e5;
             --accent-text: #a5b4fc;
             --error-text: #f87171;
+            --success-text: #4ade80;
         }
         * {
             box-sizing: border-box;
@@ -72,6 +73,9 @@
             border-color: var(--accent-color);
             box-shadow: 0 0 0 2px var(--accent-color);
         }
+        #searchSection {
+            position: relative;
+        }
         .search-container {
             position: relative;
         }
@@ -116,9 +120,15 @@
             }
         }
         #searchResults {
+            position: absolute;
+            width: 100%;
+            z-index: 10;
             margin-top: 0.5rem;
             max-height: 24rem;
             overflow-y: auto;
+            background-color: var(--bg-color);
+            border-radius: 0.5rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
         }
         .search-result-item {
             display: flex;
@@ -134,13 +144,19 @@
         .search-result-item.active {
             background-color: var(--panel-hover);
         }
-        .search-result-item img {
+        .search-result-item img,
+        .details-header img {
+            object-fit: cover;
+            background-color: var(--panel-hover);
+        }
+        .poster-image {
+            cursor: pointer;
+        }
+        .search-result-item .poster-image {
             width: 45px;
             height: 67px;
             border-radius: 0.25rem;
             margin-right: 1rem;
-            object-fit: cover;
-            background-color: var(--panel-hover);
         }
         .search-result-item .info {
             flex-grow: 1;
@@ -163,13 +179,11 @@
             gap: 1.5rem;
             align-items: flex-start;
         }
-        .details-header img {
+        .details-header .poster-image {
             width: 128px;
             height: 192px;
             border-radius: 0.5rem;
-            object-fit: cover;
             flex-shrink: 0;
-            background-color: var(--panel-hover);
         }
         .details-info {
             flex-grow: 1;
@@ -219,7 +233,7 @@
             display: block;
         }
         .copy-btn.copied {
-            color: var(--accent-text);
+            color: var(--success-text);
         }
         select {
             appearance: none;
@@ -270,6 +284,9 @@
             display: block;
             margin: 0 auto;
         }
+        .copy-all-btn.copied {
+            color: var(--success-text);
+        }
         .copy-container {
             position: relative;
         }
@@ -298,6 +315,9 @@
         }
         .copy-option:hover {
             background-color: var(--accent-color);
+        }
+        .episode-list {
+            outline: none;
         }
         .episode-list .episode-item {
             display: flex;
@@ -421,6 +441,7 @@
                 imageSizes: {
                     thumbnail: 'w92',
                     poster: 'w342',
+                    original: 'original'
                 },
                 mediaTypes: {
                     movie: 'movie',
@@ -452,7 +473,7 @@
                     }
                     return await response.json();
                 } catch (error) {
-                    console.error("Fetch failed with a specific error:", error);
+                    console.error("Fetch failed:", error);
                     return {
                         error: "Failed to fetch data. Please check your connection or try again later."
                     };
@@ -461,14 +482,9 @@
                 }
             };
             const clearAndDisplayError = (container, message) => {
-                container.innerHTML = '';
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'error-message';
-                errorDiv.textContent = message;
-                container.appendChild(errorDiv);
+                container.innerHTML = `<div class="error-message">${message}</div>`;
             };
             const searchMedia = (query) => {
-                detailsSection.innerHTML = '';
                 if (!query) {
                     clearSearchResults();
                     return;
@@ -481,6 +497,7 @@
             };
             const getMediaDetails = (id, type) => {
                 clearSearchResults();
+                detailsSection.innerHTML = '';
                 const url = `https://api.themoviedb.org/3/${type}/${id}?api_key=${CONFIG.apiKey}`;
                 fetchData(url).then(data => {
                     if (data.error) return clearAndDisplayError(detailsSection, data.error);
@@ -498,7 +515,7 @@
                 if (copyAllBtn) copyAllBtn.disabled = true;
                 fetchData(url).then(data => {
                     if (data.error) return clearAndDisplayError(episodeListContainer, data.error);
-                    if (data && data.episodes) {
+                    if (data && data.episodes && episodeListContainer) {
                         displayEpisodes(data.episodes);
                         updateCopyAllData(data.episodes);
                     }
@@ -518,18 +535,13 @@
             };
             const displaySearchResults = (results) => {
                 clearSearchResults();
-                const fragment = document.createDocumentFragment();
                 const filteredResults = results.filter(r => r.media_type === CONFIG.mediaTypes.movie || r.media_type === CONFIG.mediaTypes.tv);
                 state.searchResultsData = filteredResults;
                 if (filteredResults.length === 0) {
-                    const noResults = document.createElement('p');
-                    noResults.textContent = 'No results found.';
-                    noResults.style.color = 'var(--secondary-text)';
-                    noResults.style.textAlign = 'center';
-                    noResults.style.padding = '1rem';
-                    fragment.appendChild(noResults);
+                    searchResults.innerHTML = `<p style="color: var(--secondary-text); text-align: center; padding: 1rem;">No results found.</p>`;
                     announcer.textContent = 'No results found.';
                 } else {
+                    const fragment = document.createDocumentFragment();
                     filteredResults.forEach((result, index) => {
                         const item = document.createElement('div');
                         item.className = 'search-result-item';
@@ -541,100 +553,85 @@
                         const title = result.title || result.name;
                         const posterUrl = result.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.thumbnail}${result.poster_path}` : CONFIG.placeholderImg;
                         item.innerHTML = `
-                            <img src="${posterUrl}" alt="Poster for ${sanitizeText(title)}" loading="lazy">
+                            <img class="poster-image" data-poster-path="${result.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(title)}" loading="lazy">
                             <div class="info">
                                 <p class="title">${sanitizeText(title)}</p>
-                                <p class="meta">${year} &bull; ${result.media_type}</p>
+                                <p class="meta">${year} &bull; ${result.media_type.toUpperCase()}</p>
                             </div>`;
                         fragment.appendChild(item);
                     });
+                    searchResults.appendChild(fragment);
+                    searchResultNodes = searchResults.querySelectorAll('.search-result-item');
                     announcer.textContent = `${filteredResults.length} results found. Use arrow keys to navigate.`;
                 }
-                searchResults.appendChild(fragment);
-                searchResultNodes = searchResults.querySelectorAll('.search-result-item');
             };
             const createNameBlock = (title, name) => {
-                const block = document.createElement('div');
-                block.className = 'name-block';
-                block.innerHTML = `
+                return `
+                <div class="name-block">
                     <h3>${title}</h3>
                     <div class="name-line">
                         <pre>${sanitizeText(name)}</pre>
                         <button class="copy-btn" data-copy-text="${sanitizeText(name)}" aria-label="Copy ${title}">${copyIconSVG}</button>
-                    </div>`;
-                return block;
+                    </div>
+                </div>`;
             };
             const displayMovieDetails = (movie) => {
-                detailsSection.innerHTML = '';
-                const fragment = document.createDocumentFragment();
-                const header = document.createElement('div');
-                header.className = 'details-header';
                 const posterUrl = movie.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.poster}${movie.poster_path}` : CONFIG.placeholderImg;
-                header.innerHTML = `
-                    <img src="${posterUrl}" alt="Poster for ${sanitizeText(movie.original_title)}">
-                    <div class="details-info"></div>`;
-                header.querySelector('.details-info').appendChild(createNameBlock('Title', movie.original_title));
-                fragment.appendChild(header);
-                detailsSection.appendChild(fragment);
+                detailsSection.innerHTML = `
+                    <div class="details-header">
+                        <img class="poster-image" data-poster-path="${movie.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(movie.original_title)}">
+                        <div class="details-info">
+                            ${createNameBlock('Title', movie.original_title)}
+                        </div>
+                    </div>`;
             };
             const displayTvShowDetails = (tvShow) => {
-                detailsSection.innerHTML = '';
-                const fragment = document.createDocumentFragment();
                 const posterUrl = tvShow.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.poster}${tvShow.poster_path}` : CONFIG.placeholderImg;
-                const header = document.createElement('div');
-                header.className = 'details-header';
-                header.innerHTML = `<img src="${posterUrl}" alt="Poster for ${sanitizeText(tvShow.original_name)}"><div class="details-info"></div>`;
-                header.querySelector('.details-info').appendChild(createNameBlock('Title', tvShow.original_name));
-                const controls = document.createElement('div');
-                controls.className = 'season-controls';
                 const sortedSeasons = tvShow.seasons.sort((a, b) => a.season_number - b.season_number);
                 const seasonOptions = sortedSeasons.map(season =>
                     `<option value="${season.season_number}">${sanitizeText(season.name)}</option>`
                 ).join('');
-                controls.innerHTML = `
-                    <label for="season-select" class="visually-hidden">Select a Season</label>
-                    <select id="season-select" data-tv-id="${tvShow.id}" aria-label="Select a season">${seasonOptions}</select>
-                    <div class="copy-container">
-                        <button id="copy-all-toggle-btn" class="copy-all-btn" disabled>Copy All</button>
-                        <div id="copy-options" class="copy-options" hidden>
-                            <button class="copy-option" data-copy-type="names">Names Only</button>
-                            <button class="copy-option" data-copy-type="rename">Bulk Rename</button>
+                detailsSection.innerHTML = `
+                    <div class="details-header">
+                        <img class="poster-image" data-poster-path="${tvShow.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(tvShow.original_name)}">
+                        <div class="details-info">
+                           ${createNameBlock('Title', tvShow.original_name)}
                         </div>
-                    </div>`;
-                const episodeListContainer = document.createElement('div');
-                episodeListContainer.className = 'episode-list';
-                episodeListContainer.style.marginTop = '1rem';
-                fragment.appendChild(header);
-                fragment.appendChild(controls);
-                fragment.appendChild(episodeListContainer);
-                detailsSection.appendChild(fragment);
+                    </div>
+                    <div class="season-controls">
+                        <label for="season-select" class="visually-hidden">Select a Season</label>
+                        <select id="season-select" data-tv-id="${tvShow.id}" aria-label="Select a season">${seasonOptions}</select>
+                        <div class="copy-container">
+                            <button id="copy-all-toggle-btn" class="copy-all-btn" disabled>Copy All</button>
+                            <div id="copy-options" class="copy-options" hidden>
+                                <button class="copy-option" data-copy-type="names">Names Only</button>
+                                <button class="copy-option" data-copy-type="rename">Bulk Rename</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="episode-list" tabindex="-1"></div>`;
                 if (sortedSeasons.length > 0) getSeasonDetails(tvShow.id, sortedSeasons[0].season_number);
             };
             const displayEpisodes = (episodes) => {
                 const episodeListContainer = document.querySelector('.episode-list');
                 if (!episodeListContainer) return;
-                episodeListContainer.innerHTML = '';
-                const fragment = document.createDocumentFragment();
                 if (episodes.length === 0) {
-                    const noData = document.createElement('p');
-                    noData.textContent = 'No episode data available.';
-                    noData.style.color = 'var(--secondary-text)';
-                    noData.style.textAlign = 'center';
-                    noData.style.padding = '1rem';
-                    fragment.appendChild(noData);
-                } else {
-                    episodes.forEach(episode => {
-                        const item = document.createElement('div');
-                        item.className = 'episode-item';
-                        item.innerHTML = `
-                            <div class="episode-content">
-                                <p class="episode-meta">EPISODE ${episode.episode_number}</p>
-                                <pre>${sanitizeText(episode.name)}</pre>
-                            </div>
-                            <button class="copy-btn" data-copy-text="${sanitizeText(episode.name)}" aria-label="Copy episode name">${copyIconSVG}</button>`;
-                        fragment.appendChild(item);
-                    });
+                    episodeListContainer.innerHTML = `<p style="color: var(--secondary-text); text-align: center; padding: 1rem;">No episode data available.</p>`;
+                    return;
                 }
+                const fragment = document.createDocumentFragment();
+                episodes.forEach(episode => {
+                    const item = document.createElement('div');
+                    item.className = 'episode-item';
+                    item.innerHTML = `
+                        <div class="episode-content">
+                            <p class="episode-meta">EPISODE ${episode.episode_number}</p>
+                            <pre>${sanitizeText(episode.name)}</pre>
+                        </div>
+                        <button class="copy-btn" data-copy-text="${sanitizeText(episode.name)}" aria-label="Copy episode name">${copyIconSVG}</button>`;
+                    fragment.appendChild(item);
+                });
+                episodeListContainer.innerHTML = '';
                 episodeListContainer.appendChild(fragment);
             };
             const updateCopyAllData = (episodes) => {
@@ -648,12 +645,13 @@
                 copyAllBtn.disabled = false;
             };
             const handleCopyClick = async (btn, textToCopy) => {
-                if (!textToCopy) return;
+                if (!textToCopy || btn.disabled) return;
                 const originalContent = btn.innerHTML;
-                const feedbackDuration = 400;
+                const feedbackDuration = 1200;
                 const performCopy = async () => {
                     try {
                         await navigator.clipboard.writeText(textToCopy);
+                        return true;
                     } catch (err) {
                         console.warn('Modern clipboard API failed, falling back.', err);
                         const textArea = document.createElement("textarea");
@@ -664,47 +662,57 @@
                         textArea.focus();
                         textArea.select();
                         try {
-                            document.execCommand('copy');
+                            const success = document.execCommand('copy');
+                            document.body.removeChild(textArea);
+                            return success;
                         } catch (fallbackErr) {
                             console.error('Fallback copy method failed:', fallbackErr);
-                        } finally {
                             document.body.removeChild(textArea);
+                            return false;
                         }
                     }
                 };
-                btn.innerHTML = checkIconSVG;
-                btn.classList.add('copied');
                 btn.disabled = true;
-                setTimeout(performCopy, 50);
+                const wasCopied = await performCopy();
+                if (wasCopied) {
+                    btn.innerHTML = checkIconSVG;
+                    btn.classList.add('copied');
+                }
                 setTimeout(() => {
                     btn.innerHTML = originalContent;
                     btn.classList.remove('copied');
                     btn.disabled = false;
                 }, feedbackDuration);
             };
-            const toTitleCase = (str) => {
+            const openPosterInNewTab = (posterPath) => {
+                if (!posterPath || posterPath === 'null') return;
+                const highQualityUrl = `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.original}${posterPath}`;
+                window.open(highQualityUrl, '_blank');
+            };
+            const toTitleCase = (str, live = false) => {
                 if (!str) return '';
                 const minorWords = new Set(['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'so', 'yet', 'on', 'at', 'by', 'in', 'of']);
                 let words = str.split(' ');
                 let effectiveLastWordIndex = words.length - 1;
-                if (words[effectiveLastWordIndex] === '' && words.length > 1) {
+                while (words[effectiveLastWordIndex] === '' && effectiveLastWordIndex > 0) {
                     effectiveLastWordIndex--;
                 }
-                for (let i = 0; i < words.length; i++) {
-                    let word = words[i];
-                    if (word === "") continue;
+                return words.map((word, i) => {
+                    if (word === "") return "";
                     let lowerWord = word.toLowerCase();
-                    if (lowerWord.includes('-')) {
-                        words[i] = lowerWord.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('-');
-                        continue;
+                    const shouldCapitalize =
+                        i === 0 ||
+                        !minorWords.has(lowerWord) ||
+                        (i > 0 && words[i - 1].endsWith(':')) ||
+                        (!live && i === effectiveLastWordIndex);
+                    if (shouldCapitalize) {
+                        if (lowerWord.includes('-')) {
+                            return lowerWord.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('-');
+                        }
+                        return lowerWord.charAt(0).toUpperCase() + lowerWord.slice(1);
                     }
-                    if (i === 0 || i === effectiveLastWordIndex || !minorWords.has(lowerWord)) {
-                        words[i] = lowerWord.charAt(0).toUpperCase() + lowerWord.slice(1);
-                    } else {
-                        words[i] = lowerWord;
-                    }
-                }
-                return words.join(' ');
+                    return lowerWord;
+                }).join(' ');
             };
             const closeCopyOptionsOnClickOutside = (e) => {
                 const copyOptions = document.getElementById('copy-options');
@@ -713,94 +721,97 @@
                     document.removeEventListener('click', closeCopyOptionsOnClickOutside);
                 }
             };
-            searchInput.addEventListener('keyup', (e) => {
-                if (e.key === ' ') {
-                    const cursorPosition = e.target.selectionStart;
-                    e.target.value = toTitleCase(e.target.value);
-                    e.target.setSelectionRange(cursorPosition, cursorPosition);
-                }
-            });
             searchInput.addEventListener('input', () => {
+                const originalValue = searchInput.value;
+                const cursorPosition = searchInput.selectionStart;
+                const titleCasedValueLive = toTitleCase(originalValue, true);
+                if (originalValue !== titleCasedValueLive) {
+                    searchInput.value = titleCasedValueLive;
+                    searchInput.setSelectionRange(cursorPosition, cursorPosition);
+                }
                 clearTimeout(state.debounceTimer);
-                const inputElement = searchInput;
-                const hasValue = inputElement.value.length > 0;
-                clearSearchBtn.hidden = !hasValue;
+                clearSearchBtn.hidden = searchInput.value.length === 0;
                 state.debounceTimer = setTimeout(() => {
-                    const originalValue = inputElement.value;
-                    const cursorPosition = inputElement.selectionStart;
-                    const titleCasedValue = toTitleCase(originalValue);
-                    if (originalValue !== titleCasedValue) {
-                        inputElement.value = titleCasedValue;
-                        inputElement.setSelectionRange(cursorPosition, cursorPosition);
+                    const currentValue = searchInput.value;
+                    const finalCursorPosition = searchInput.selectionStart;
+                    const titleCasedValueFinal = toTitleCase(currentValue, false);
+                    if (currentValue !== titleCasedValueFinal) {
+                        searchInput.value = titleCasedValueFinal;
+                        searchInput.setSelectionRange(finalCursorPosition, finalCursorPosition);
                     }
-                    searchMedia(titleCasedValue.trim());
+                    searchMedia(titleCasedValueFinal.trim());
                 }, CONFIG.debounceDelay);
             });
             searchInput.addEventListener('keydown', (e) => {
-                const items = searchResultNodes;
-                if (items.length === 0) return;
+                if (searchResultNodes.length === 0) return;
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    state.currentKeyboardFocus++;
-                    if (state.currentKeyboardFocus >= items.length) state.currentKeyboardFocus = 0;
-                    setActiveResult(items);
+                    state.currentKeyboardFocus = (state.currentKeyboardFocus + 1) % searchResultNodes.length;
+                    setActiveResult();
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    state.currentKeyboardFocus--;
-                    if (state.currentKeyboardFocus < 0) state.currentKeyboardFocus = items.length - 1;
-                    setActiveResult(items);
-                } else if (e.key === 'Enter') {
+                    state.currentKeyboardFocus = (state.currentKeyboardFocus - 1 + searchResultNodes.length) % searchResultNodes.length;
+                    setActiveResult();
+                } else if (e.key === 'Enter' && state.currentKeyboardFocus > -1) {
                     e.preventDefault();
-                    if (state.currentKeyboardFocus > -1 && items[state.currentKeyboardFocus]) {
-                        items[state.currentKeyboardFocus].click();
-                    }
+                    searchResultNodes[state.currentKeyboardFocus].click();
                 }
             });
-            const setActiveResult = (items) => {
-                items.forEach(item => item.classList.remove('active'));
-                if (state.currentKeyboardFocus > -1) {
-                    const activeItem = items[state.currentKeyboardFocus];
-                    activeItem.classList.add('active');
-                    activeItem.scrollIntoView({
-                        block: 'nearest'
-                    });
-                    searchInput.setAttribute('aria-activedescendant', activeItem.id);
-                } else {
-                    searchInput.removeAttribute('aria-activedescendant');
-                }
+            const setActiveResult = () => {
+                searchResultNodes.forEach((item, index) => {
+                    if (index === state.currentKeyboardFocus) {
+                        item.classList.add('active');
+                        item.scrollIntoView({
+                            block: 'nearest'
+                        });
+                        searchInput.setAttribute('aria-activedescendant', item.id);
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
             };
             searchResults.addEventListener('click', (e) => {
+                const poster = e.target.closest('.poster-image');
+                if (poster) {
+                    e.stopPropagation();
+                    openPosterInNewTab(poster.dataset.posterPath);
+                    return;
+                }
                 const item = e.target.closest('.search-result-item');
                 if (item) getMediaDetails(item.dataset.id, item.dataset.type);
             });
             detailsSection.addEventListener('click', (e) => {
-                const copyBtn = e.target.closest('.copy-btn');
+                const target = e.target;
+                const poster = target.closest('.poster-image');
+                if (poster) {
+                    openPosterInNewTab(poster.dataset.posterPath);
+                    return;
+                }
+                const copyBtn = target.closest('.copy-btn');
                 if (copyBtn) {
                     handleCopyClick(copyBtn, copyBtn.dataset.copyText);
                     return;
                 }
-                const toggleBtn = e.target.closest('#copy-all-toggle-btn');
+                const toggleBtn = target.closest('#copy-all-toggle-btn');
                 if (toggleBtn) {
                     const copyOptions = document.getElementById('copy-options');
-                    copyOptions.hidden = !copyOptions.hidden;
-                    if (!copyOptions.hidden) {
+                    const isHidden = copyOptions.hidden;
+                    copyOptions.hidden = !isHidden;
+                    if (isHidden) {
                         document.addEventListener('click', closeCopyOptionsOnClickOutside);
                     } else {
                         document.removeEventListener('click', closeCopyOptionsOnClickOutside);
                     }
                     return;
                 }
-                const copyOptionBtn = e.target.closest('.copy-option');
+                const copyOptionBtn = target.closest('.copy-option');
                 if (copyOptionBtn) {
-                    const copyOptions = document.getElementById('copy-options');
-                    const copyContainer = e.target.closest('.copy-container');
+                    const copyContainer = target.closest('.copy-container');
                     const copyType = copyOptionBtn.dataset.copyType;
-                    const toggleBtnForFeedback = document.getElementById('copy-all-toggle-btn');
-                    let textToCopy = (copyType === 'names') ? copyContainer.dataset.copyNames : copyContainer.dataset.copyRename;
-                    copyOptions.hidden = true;
+                    const textToCopy = (copyType === 'names') ? copyContainer.dataset.copyNames : copyContainer.dataset.copyRename;
+                    document.getElementById('copy-options').hidden = true;
                     document.removeEventListener('click', closeCopyOptionsOnClickOutside);
-                    handleCopyClick(toggleBtnForFeedback, textToCopy);
-                    return;
+                    handleCopyClick(document.getElementById('copy-all-toggle-btn'), textToCopy);
                 }
             });
             detailsSection.addEventListener('change', (e) => {
@@ -808,15 +819,18 @@
                     getSeasonDetails(e.target.dataset.tvId, e.target.value);
                 }
             });
-            const resetApp = () => {
+            const clearSearchInput = () => {
                 searchInput.value = '';
                 clearSearchResults();
-                detailsSection.innerHTML = '';
-                announcer.textContent = 'Search cleared.';
+                announcer.textContent = 'Search input cleared.';
                 clearSearchBtn.hidden = true;
                 searchInput.focus();
             };
-            clearSearchBtn.addEventListener('click', resetApp);
+            const resetApp = () => {
+                clearSearchInput();
+                detailsSection.innerHTML = '';
+            };
+            clearSearchBtn.addEventListener('click', clearSearchInput);
             titleButton.addEventListener('click', resetApp);
         })();
     </script>
