@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Copy original episode and movie names with formatting for use in local personal media libraries">
     <title>Name Fetcher</title>
     <style>
         :root {
@@ -18,37 +18,31 @@
             --accent-text: #a5b4fc;
             --error-text: #f87171;
         }
-
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
-
         html {
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--primary-text);
             line-height: 1.6;
         }
-
         .container {
             width: 100%;
             max-width: 42rem;
             margin: 0 auto;
             padding: 1.5rem 1rem;
         }
-
         header {
             text-align: center;
             margin-bottom: 2rem;
         }
-
         .title-button {
             background: none;
             border: none;
@@ -60,37 +54,37 @@
             letter-spacing: -0.025em;
             cursor: pointer;
         }
-
         #searchInput {
             width: 100%;
             background-color: var(--panel-bg);
             color: var(--primary-text);
             border: 1px solid var(--border-color);
             border-radius: 0.5rem;
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 3rem 0.75rem 1rem;
             font-size: 1.125rem;
             transition: border-color 150ms ease, box-shadow 150ms ease;
         }
-
         #searchInput::placeholder {
-            color: var(--tertiary-text);
+            color: var(--secondary-text);
         }
-
         #searchInput:focus {
             outline: none;
             border-color: var(--accent-color);
             box-shadow: 0 0 0 2px var(--accent-color);
         }
-
         .search-container {
             position: relative;
         }
-
-        #loader {
+        .search-adornment {
             position: absolute;
             right: 1rem;
             top: 50%;
             transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #loader {
             width: 1.5rem;
             height: 1.5rem;
             border: 4px solid var(--panel-hover);
@@ -98,19 +92,34 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-
+        .clear-search-btn {
+            background: none;
+            border: none;
+            color: var(--secondary-text);
+            cursor: pointer;
+            padding: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 150ms ease;
+        }
+        .clear-search-btn:hover {
+            color: var(--primary-text);
+        }
+        .clear-search-btn svg {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
         @keyframes spin {
             to {
-                transform: translateY(-50%) rotate(360deg);
+                transform: rotate(360deg);
             }
         }
-
         #searchResults {
             margin-top: 0.5rem;
             max-height: 24rem;
             overflow-y: auto;
         }
-
         .search-result-item {
             display: flex;
             align-items: center;
@@ -121,12 +130,10 @@
             cursor: pointer;
             transition: background-color 150ms;
         }
-
         .search-result-item:hover,
         .search-result-item.active {
             background-color: var(--panel-hover);
         }
-
         .search-result-item img {
             width: 45px;
             height: 67px;
@@ -135,34 +142,27 @@
             object-fit: cover;
             background-color: var(--panel-hover);
         }
-
         .search-result-item .info {
             flex-grow: 1;
         }
-
         .search-result-item p {
             margin: 0;
         }
-
         .search-result-item .title {
             font-weight: 600;
         }
-
         .search-result-item .meta {
             font-size: 0.875rem;
             color: var(--secondary-text);
         }
-
         #detailsSection {
             margin-top: 2rem;
         }
-
         .details-header {
             display: flex;
             gap: 1.5rem;
             align-items: flex-start;
         }
-
         .details-header img {
             width: 128px;
             height: 192px;
@@ -171,15 +171,12 @@
             flex-shrink: 0;
             background-color: var(--panel-hover);
         }
-
         .details-info {
             flex-grow: 1;
         }
-
         .name-block {
             margin-bottom: 1rem;
         }
-
         .name-block h3 {
             font-size: 0.75rem;
             font-weight: 600;
@@ -187,13 +184,11 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
-
         .name-block .name-line {
             display: flex;
             align-items: flex-start;
             gap: 0.5rem;
         }
-
         .name-block pre {
             font-family: "SF Mono", "Consolas", "Roboto Mono", "Fira Code", monospace;
             font-size: 1.125rem;
@@ -204,7 +199,6 @@
             word-break: break-word;
             flex-grow: 1;
         }
-
         .copy-btn {
             background: none;
             border: none;
@@ -215,22 +209,18 @@
             color: var(--secondary-text);
             transition: color 150ms, background-color 150ms;
         }
-
         .copy-btn:hover {
             background-color: var(--panel-hover);
             color: var(--primary-text);
         }
-
         .copy-btn svg {
             width: 1.125rem;
             height: 1.125rem;
             display: block;
         }
-
         .copy-btn.copied {
             color: var(--accent-text);
         }
-
         select {
             appearance: none;
             -webkit-appearance: none;
@@ -247,14 +237,12 @@
             background-size: 1.5em 1.5em;
             flex-grow: 1;
         }
-
         .season-controls {
             margin-top: 1.5rem;
             display: flex;
             align-items: center;
             gap: 0.75rem;
         }
-
         .copy-all-btn {
             background-color: var(--panel-bg);
             color: var(--primary-text);
@@ -269,27 +257,22 @@
             min-width: 100px;
             text-align: center;
         }
-
         .copy-all-btn:hover {
             background-color: var(--panel-hover);
         }
-
         .copy-all-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-
         .copy-all-btn svg {
             width: 1.125rem;
             height: 1.125rem;
             display: block;
             margin: 0 auto;
         }
-
         .copy-container {
             position: relative;
         }
-
         .copy-options {
             position: absolute;
             top: calc(100% + 0.25rem);
@@ -302,7 +285,6 @@
             min-width: 12rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
-
         .copy-option {
             display: block;
             width: 100%;
@@ -314,11 +296,9 @@
             cursor: pointer;
             font-size: 0.875rem;
         }
-
         .copy-option:hover {
             background-color: var(--accent-color);
         }
-
         .episode-list .episode-item {
             display: flex;
             align-items: flex-start;
@@ -326,21 +306,17 @@
             padding: 0.75rem 0;
             border-top: 1px solid var(--panel-bg);
         }
-
         .episode-list .episode-item:first-child {
             border-top: none;
         }
-
         .episode-list .episode-content {
             flex-grow: 1;
         }
-
         .episode-list .episode-meta {
             color: var(--secondary-text);
             font-size: 0.75rem;
             text-transform: uppercase;
         }
-
         .episode-list pre {
             font-family: "SF Mono", "Consolas", "Roboto Mono", "Fira Code", monospace;
             color: var(--primary-text);
@@ -349,11 +325,9 @@
             white-space: pre-wrap;
             word-break: break-word;
         }
-
         [hidden] {
             display: none;
         }
-
         .visually-hidden {
             position: absolute;
             width: 1px;
@@ -365,7 +339,6 @@
             white-space: nowrap;
             border-width: 0;
         }
-
         .error-message {
             color: var(--error-text);
             text-align: center;
@@ -373,86 +346,77 @@
             background-color: rgba(248, 113, 113, 0.1);
             border-radius: 0.5rem;
         }
-
         ::-webkit-scrollbar {
             width: 0.5rem;
         }
-
         ::-webkit-scrollbar-track {
             background: var(--bg-color);
         }
-
         ::-webkit-scrollbar-thumb {
             background: var(--panel-hover);
             border-radius: 0.25rem;
         }
-
         ::-webkit-scrollbar-thumb:hover {
             background: var(--border-color);
         }
-
         @media (max-width: 640px) {
             .container {
                 padding: 1rem;
             }
-
             .title-button {
                 font-size: 1.75rem;
             }
-
             #searchInput {
                 font-size: 1rem;
             }
-
             .details-header {
                 flex-direction: column;
                 align-items: center;
                 text-align: center;
             }
-
             .details-header img {
                 width: 192px;
                 height: 288px;
             }
-
             .season-controls {
                 flex-direction: column;
                 align-items: stretch;
             }
-
             .copy-all-btn {
                 margin-top: 0.5rem;
             }
         }
     </style>
 </head>
-
 <body>
-
     <div class="container">
         <header>
             <button type="button" id="title-button" class="title-button">Name Fetcher</button>
         </header>
-
         <main id="mainContent">
             <div id="searchSection">
                 <div class="search-container">
                     <input type="text" id="searchInput" placeholder="Search for a movie or TV show..." aria-label="Search for a movie or TV show" autocomplete="off" aria-controls="searchResults" aria-autocomplete="list">
-                    <div id="loader" hidden></div>
+                    <div class="search-adornment">
+                        <button type="button" id="clearSearchBtn" class="clear-search-btn" aria-label="Clear search" hidden>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <div id="loader" hidden></div>
+                    </div>
                 </div>
                 <div id="searchResults" role="listbox" aria-label="Search Results"></div>
                 <div id="a11y-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
             </div>
-
             <div id="detailsSection"></div>
         </main>
     </div>
-
     <script>
         (() => {
             const CONFIG = {
                 apiKey: "c674a42c1610c3dc031b925860214289",
-                debounceDelay: 500,
+                debounceDelay: 300,
                 imgBaseUrl: 'https://image.tmdb.org/t/p/',
                 imageSizes: {
                     thumbnail: 'w92',
@@ -464,25 +428,21 @@
                 },
                 placeholderImg: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 3' fill='%231f2937'%3E%3Crect width='2' height='3'/%3E%3C/svg%3E"
             };
-
             const searchInput = document.getElementById('searchInput');
             const searchResults = document.getElementById('searchResults');
             const detailsSection = document.getElementById('detailsSection');
             const loader = document.getElementById('loader');
             const titleButton = document.getElementById('title-button');
             const announcer = document.getElementById('a11y-announcer');
-
+            const clearSearchBtn = document.getElementById('clearSearchBtn');
             const state = {
                 debounceTimer: null,
                 currentKeyboardFocus: -1,
                 searchResultsData: []
             };
-
             let searchResultNodes = [];
-
             const copyIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25H9.75A2.25 2.25 0 017.5 4.5v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>`;
             const checkIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>`;
-
             const fetchData = async (url) => {
                 loader.hidden = false;
                 try {
@@ -500,7 +460,6 @@
                     loader.hidden = true;
                 }
             };
-
             const clearAndDisplayError = (container, message) => {
                 container.innerHTML = '';
                 const errorDiv = document.createElement('div');
@@ -508,7 +467,6 @@
                 errorDiv.textContent = message;
                 container.appendChild(errorDiv);
             };
-
             const searchMedia = (query) => {
                 detailsSection.innerHTML = '';
                 if (!query) {
@@ -521,7 +479,6 @@
                     if (data && data.results) displaySearchResults(data.results);
                 });
             };
-
             const getMediaDetails = (id, type) => {
                 clearSearchResults();
                 const url = `https://api.themoviedb.org/3/${type}/${id}?api_key=${CONFIG.apiKey}`;
@@ -533,15 +490,12 @@
                     }
                 });
             };
-
             const getSeasonDetails = (tvId, seasonNumber) => {
                 const url = `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${CONFIG.apiKey}`;
                 const episodeListContainer = document.querySelector('.episode-list');
                 const copyAllBtn = document.getElementById('copy-all-toggle-btn');
-
                 if (episodeListContainer) episodeListContainer.innerHTML = '';
                 if (copyAllBtn) copyAllBtn.disabled = true;
-
                 fetchData(url).then(data => {
                     if (data.error) return clearAndDisplayError(episodeListContainer, data.error);
                     if (data && data.episodes) {
@@ -550,13 +504,11 @@
                     }
                 });
             };
-
             const sanitizeText = (text) => {
                 const temp = document.createElement('div');
                 temp.textContent = text || '';
                 return temp.innerHTML;
             };
-
             const clearSearchResults = () => {
                 searchResults.innerHTML = '';
                 state.currentKeyboardFocus = -1;
@@ -564,13 +516,11 @@
                 searchResultNodes = [];
                 searchInput.removeAttribute('aria-activedescendant');
             };
-
             const displaySearchResults = (results) => {
                 clearSearchResults();
                 const fragment = document.createDocumentFragment();
                 const filteredResults = results.filter(r => r.media_type === CONFIG.mediaTypes.movie || r.media_type === CONFIG.mediaTypes.tv);
                 state.searchResultsData = filteredResults;
-
                 if (filteredResults.length === 0) {
                     const noResults = document.createElement('p');
                     noResults.textContent = 'No results found.';
@@ -587,11 +537,9 @@
                         item.dataset.type = result.media_type;
                         item.id = `result-option-${index}`;
                         item.setAttribute('role', 'option');
-
                         const year = result.release_date?.split('-')[0] || result.first_air_date?.split('-')[0] || 'N/A';
                         const title = result.title || result.name;
                         const posterUrl = result.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.thumbnail}${result.poster_path}` : CONFIG.placeholderImg;
-
                         item.innerHTML = `
                             <img src="${posterUrl}" alt="Poster for ${sanitizeText(title)}" loading="lazy">
                             <div class="info">
@@ -605,7 +553,6 @@
                 searchResults.appendChild(fragment);
                 searchResultNodes = searchResults.querySelectorAll('.search-result-item');
             };
-
             const createNameBlock = (title, name) => {
                 const block = document.createElement('div');
                 block.className = 'name-block';
@@ -617,33 +564,27 @@
                     </div>`;
                 return block;
             };
-
             const displayMovieDetails = (movie) => {
                 detailsSection.innerHTML = '';
                 const fragment = document.createDocumentFragment();
                 const header = document.createElement('div');
                 header.className = 'details-header';
                 const posterUrl = movie.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.poster}${movie.poster_path}` : CONFIG.placeholderImg;
-
                 header.innerHTML = `
                     <img src="${posterUrl}" alt="Poster for ${sanitizeText(movie.original_title)}">
                     <div class="details-info"></div>`;
-
                 header.querySelector('.details-info').appendChild(createNameBlock('Title', movie.original_title));
                 fragment.appendChild(header);
                 detailsSection.appendChild(fragment);
             };
-
             const displayTvShowDetails = (tvShow) => {
                 detailsSection.innerHTML = '';
                 const fragment = document.createDocumentFragment();
                 const posterUrl = tvShow.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.poster}${tvShow.poster_path}` : CONFIG.placeholderImg;
-
                 const header = document.createElement('div');
                 header.className = 'details-header';
                 header.innerHTML = `<img src="${posterUrl}" alt="Poster for ${sanitizeText(tvShow.original_name)}"><div class="details-info"></div>`;
                 header.querySelector('.details-info').appendChild(createNameBlock('Title', tvShow.original_name));
-
                 const controls = document.createElement('div');
                 controls.className = 'season-controls';
                 const sortedSeasons = tvShow.seasons.sort((a, b) => a.season_number - b.season_number);
@@ -660,26 +601,20 @@
                             <button class="copy-option" data-copy-type="rename">Bulk Rename</button>
                         </div>
                     </div>`;
-
                 const episodeListContainer = document.createElement('div');
                 episodeListContainer.className = 'episode-list';
                 episodeListContainer.style.marginTop = '1rem';
-
                 fragment.appendChild(header);
                 fragment.appendChild(controls);
                 fragment.appendChild(episodeListContainer);
                 detailsSection.appendChild(fragment);
-
                 if (sortedSeasons.length > 0) getSeasonDetails(tvShow.id, sortedSeasons[0].season_number);
             };
-
             const displayEpisodes = (episodes) => {
                 const episodeListContainer = document.querySelector('.episode-list');
                 if (!episodeListContainer) return;
-
                 episodeListContainer.innerHTML = '';
                 const fragment = document.createDocumentFragment();
-
                 if (episodes.length === 0) {
                     const noData = document.createElement('p');
                     noData.textContent = 'No episode data available.';
@@ -702,26 +637,20 @@
                 }
                 episodeListContainer.appendChild(fragment);
             };
-
             const updateCopyAllData = (episodes) => {
                 const copyAllBtn = document.getElementById('copy-all-toggle-btn');
                 const copyContainer = document.querySelector('.copy-container');
                 if (!copyAllBtn || !copyContainer || episodes.length === 0) return;
-
                 const namesOnly = episodes.map(e => e.name).join('\n');
                 const bulkRename = episodes.map(e => `E${String(e.episode_number).padStart(2, '0')} - ${e.name}.mkv`).join('\n');
-
                 copyContainer.dataset.copyNames = namesOnly;
                 copyContainer.dataset.copyRename = bulkRename;
                 copyAllBtn.disabled = false;
             };
-
             const handleCopyClick = async (btn, textToCopy) => {
                 if (!textToCopy) return;
-
                 const originalContent = btn.innerHTML;
                 const feedbackDuration = 400;
-
                 const performCopy = async () => {
                     try {
                         await navigator.clipboard.writeText(textToCopy);
@@ -743,20 +672,16 @@
                         }
                     }
                 };
-
                 btn.innerHTML = checkIconSVG;
                 btn.classList.add('copied');
                 btn.disabled = true;
-
                 setTimeout(performCopy, 50);
-
                 setTimeout(() => {
                     btn.innerHTML = originalContent;
                     btn.classList.remove('copied');
                     btn.disabled = false;
                 }, feedbackDuration);
             };
-
             const toTitleCase = (str) => {
                 if (!str) return '';
                 const minorWords = new Set(['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'so', 'yet', 'on', 'at', 'by', 'in', 'of']);
@@ -765,17 +690,14 @@
                 if (words[effectiveLastWordIndex] === '' && words.length > 1) {
                     effectiveLastWordIndex--;
                 }
-
                 for (let i = 0; i < words.length; i++) {
                     let word = words[i];
                     if (word === "") continue;
                     let lowerWord = word.toLowerCase();
-
                     if (lowerWord.includes('-')) {
                         words[i] = lowerWord.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('-');
                         continue;
                     }
-
                     if (i === 0 || i === effectiveLastWordIndex || !minorWords.has(lowerWord)) {
                         words[i] = lowerWord.charAt(0).toUpperCase() + lowerWord.slice(1);
                     } else {
@@ -784,7 +706,6 @@
                 }
                 return words.join(' ');
             };
-
             const closeCopyOptionsOnClickOutside = (e) => {
                 const copyOptions = document.getElementById('copy-options');
                 if (copyOptions && !e.target.closest('.copy-container')) {
@@ -792,7 +713,6 @@
                     document.removeEventListener('click', closeCopyOptionsOnClickOutside);
                 }
             };
-
             searchInput.addEventListener('keyup', (e) => {
                 if (e.key === ' ') {
                     const cursorPosition = e.target.selectionStart;
@@ -800,16 +720,15 @@
                     e.target.setSelectionRange(cursorPosition, cursorPosition);
                 }
             });
-
             searchInput.addEventListener('input', () => {
                 clearTimeout(state.debounceTimer);
                 const inputElement = searchInput;
-
+                const hasValue = inputElement.value.length > 0;
+                clearSearchBtn.hidden = !hasValue;
                 state.debounceTimer = setTimeout(() => {
                     const originalValue = inputElement.value;
                     const cursorPosition = inputElement.selectionStart;
                     const titleCasedValue = toTitleCase(originalValue);
-
                     if (originalValue !== titleCasedValue) {
                         inputElement.value = titleCasedValue;
                         inputElement.setSelectionRange(cursorPosition, cursorPosition);
@@ -817,11 +736,9 @@
                     searchMedia(titleCasedValue.trim());
                 }, CONFIG.debounceDelay);
             });
-
             searchInput.addEventListener('keydown', (e) => {
                 const items = searchResultNodes;
                 if (items.length === 0) return;
-
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     state.currentKeyboardFocus++;
@@ -839,7 +756,6 @@
                     }
                 }
             });
-
             const setActiveResult = (items) => {
                 items.forEach(item => item.classList.remove('active'));
                 if (state.currentKeyboardFocus > -1) {
@@ -853,19 +769,16 @@
                     searchInput.removeAttribute('aria-activedescendant');
                 }
             };
-
             searchResults.addEventListener('click', (e) => {
                 const item = e.target.closest('.search-result-item');
                 if (item) getMediaDetails(item.dataset.id, item.dataset.type);
             });
-
             detailsSection.addEventListener('click', (e) => {
                 const copyBtn = e.target.closest('.copy-btn');
                 if (copyBtn) {
                     handleCopyClick(copyBtn, copyBtn.dataset.copyText);
                     return;
                 }
-
                 const toggleBtn = e.target.closest('#copy-all-toggle-btn');
                 if (toggleBtn) {
                     const copyOptions = document.getElementById('copy-options');
@@ -877,33 +790,35 @@
                     }
                     return;
                 }
-
                 const copyOptionBtn = e.target.closest('.copy-option');
                 if (copyOptionBtn) {
+                    const copyOptions = document.getElementById('copy-options');
                     const copyContainer = e.target.closest('.copy-container');
                     const copyType = copyOptionBtn.dataset.copyType;
                     const toggleBtnForFeedback = document.getElementById('copy-all-toggle-btn');
                     let textToCopy = (copyType === 'names') ? copyContainer.dataset.copyNames : copyContainer.dataset.copyRename;
+                    copyOptions.hidden = true;
+                    document.removeEventListener('click', closeCopyOptionsOnClickOutside);
                     handleCopyClick(toggleBtnForFeedback, textToCopy);
                     return;
                 }
             });
-
             detailsSection.addEventListener('change', (e) => {
                 if (e.target.id === 'season-select') {
                     getSeasonDetails(e.target.dataset.tvId, e.target.value);
                 }
             });
-
-            titleButton.addEventListener('click', () => {
+            const resetApp = () => {
                 searchInput.value = '';
                 clearSearchResults();
                 detailsSection.innerHTML = '';
-                announcer.textContent = '';
-            });
-
+                announcer.textContent = 'Search cleared.';
+                clearSearchBtn.hidden = true;
+                searchInput.focus();
+            };
+            clearSearchBtn.addEventListener('click', resetApp);
+            titleButton.addEventListener('click', resetApp);
         })();
     </script>
 </body>
-
 </html>
