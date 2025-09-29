@@ -18,6 +18,8 @@
             --accent-text: #a5b4fc;
             --error-text: #f87171;
             --success-text: #4ade80;
+            --success-icon-color: #39ff14;
+            --error-icon-color: #f87171;
         }
         * {
             box-sizing: border-box;
@@ -73,6 +75,13 @@
             border-color: var(--accent-color);
             box-shadow: 0 0 0 2px var(--accent-color);
         }
+        #searchInput.search-focus-flash {
+            animation: search-flash 0.5s ease;
+        }
+        @keyframes search-flash {
+            0%, 100% { box-shadow: 0 0 0 2px var(--accent-color); }
+            50% { box-shadow: 0 0 0 4px var(--accent-color); }
+        }
         #searchSection {
             position: relative;
         }
@@ -88,7 +97,7 @@
             align-items: center;
             gap: 0.5rem;
         }
-        #loader {
+        .loader {
             width: 1.5rem;
             height: 1.5rem;
             border: 4px solid var(--panel-hover);
@@ -101,11 +110,13 @@
             border: none;
             color: var(--secondary-text);
             cursor: pointer;
-            padding: 0.25rem;
+            padding: 0.5rem;
+            margin: -0.25rem;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: color 150ms ease;
+            touch-action: manipulation;
         }
         .clear-search-btn:hover {
             color: var(--primary-text);
@@ -129,16 +140,18 @@
             background-color: var(--bg-color);
             border-radius: 0.5rem;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
         }
         .search-result-item {
             display: flex;
             align-items: center;
             padding: 0.5rem;
-            margin: 0.25rem 0;
+            margin: 0.25rem;
             background-color: var(--panel-bg);
             border-radius: 0.5rem;
             cursor: pointer;
             transition: background-color 150ms;
+            touch-action: manipulation;
         }
         .search-result-item:hover,
         .search-result-item.active {
@@ -151,6 +164,11 @@
         }
         .poster-image {
             cursor: pointer;
+            transition: transform 150ms ease;
+            touch-action: manipulation;
+        }
+        .poster-image:hover {
+            transform: scale(1.03);
         }
         .search-result-item .poster-image {
             width: 45px;
@@ -211,17 +229,20 @@
             padding: 0;
             white-space: pre-wrap;
             word-break: break-word;
+            overflow-wrap: break-word;
             flex-grow: 1;
         }
         .copy-btn {
             background: none;
             border: none;
             cursor: pointer;
-            padding: 0.25rem;
-            margin-top: 0.5rem;
+            padding: 0.5rem;
+            margin-top: 0.25rem;
+            margin-right: -0.25rem;
             border-radius: 0.25rem;
             color: var(--secondary-text);
             transition: color 150ms, background-color 150ms;
+            touch-action: manipulation;
         }
         .copy-btn:hover {
             background-color: var(--panel-hover);
@@ -232,8 +253,11 @@
             height: 1.125rem;
             display: block;
         }
-        .copy-btn.copied {
-            color: var(--success-text);
+        .copy-btn.copied svg {
+            color: var(--success-icon-color);
+        }
+        .copy-btn.error svg {
+            color: var(--error-icon-color);
         }
         select {
             appearance: none;
@@ -250,6 +274,12 @@
             background-repeat: no-repeat;
             background-size: 1.5em 1.5em;
             flex-grow: 1;
+            transition: border-color 150ms ease, box-shadow 150ms ease;
+        }
+        select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px var(--accent-color);
         }
         .season-controls {
             margin-top: 1.5rem;
@@ -266,12 +296,20 @@
             font-size: 0.875rem;
             font-weight: 500;
             cursor: pointer;
-            transition: background-color 150ms;
+            transition: background-color 150ms, color 150ms;
             flex-shrink: 0;
             min-width: 100px;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            touch-action: manipulation;
         }
-        .copy-all-btn:hover {
+        .copy-all-btn .btn-text {
+            transition: color 150ms;
+        }
+        .copy-all-btn:hover,
+        .copy-all-btn.dropdown-open {
             background-color: var(--panel-hover);
         }
         .copy-all-btn:disabled {
@@ -281,11 +319,13 @@
         .copy-all-btn svg {
             width: 1.125rem;
             height: 1.125rem;
-            display: block;
-            margin: 0 auto;
+            transition: transform 150ms ease;
         }
-        .copy-all-btn.copied {
-            color: var(--success-text);
+        .copy-all-btn.copied svg {
+            color: var(--success-icon-color);
+        }
+        .copy-all-btn.error svg {
+            color: var(--error-icon-color);
         }
         .copy-container {
             position: relative;
@@ -298,12 +338,13 @@
             border: 1px solid var(--border-color);
             border-radius: 0.5rem;
             z-index: 10;
-            overflow: hidden;
             min-width: 12rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         .copy-option {
-            display: block;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             width: 100%;
             text-align: left;
             background: none;
@@ -312,12 +353,45 @@
             padding: 0.5rem 1rem;
             cursor: pointer;
             font-size: 0.875rem;
+            touch-action: manipulation;
         }
-        .copy-option:hover {
+        .copy-option:hover,
+        .copy-option:focus {
             background-color: var(--accent-color);
+            outline: none;
+        }
+        .copy-option-divider {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 0.5rem 0;
+        }
+        .copy-option-submenu-container {
+            position: relative;
+        }
+        .copy-option .submenu-arrow {
+            width: 1rem;
+            height: 1rem;
+            color: var(--secondary-text);
+        }
+        .copy-options-level2 {
+            position: absolute;
+            top: -1px;
+            left: 100%;
+            display: none;
+            background-color: var(--panel-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            z-index: 11;
+            min-width: 8rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .copy-option-submenu-container:hover > .copy-options-level2,
+        .copy-option-submenu-container:focus-within > .copy-options-level2 {
+            display: block;
         }
         .episode-list {
             outline: none;
+            margin-top: 1rem;
         }
         .episode-list .episode-item {
             display: flex;
@@ -328,6 +402,12 @@
         }
         .episode-list .episode-item:first-child {
             border-top: none;
+        }
+        .episode-loader {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
         }
         .episode-list .episode-content {
             flex-grow: 1;
@@ -344,9 +424,10 @@
             font-size: 1rem;
             white-space: pre-wrap;
             word-break: break-word;
+            overflow-wrap: break-word;
         }
         [hidden] {
-            display: none;
+            display: none !important;
         }
         .visually-hidden {
             position: absolute;
@@ -365,6 +446,17 @@
             padding: 1rem;
             background-color: rgba(248, 113, 113, 0.1);
             border-radius: 0.5rem;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--secondary-text);
+        }
+        .empty-state svg {
+            width: 3rem;
+            height: 3rem;
+            margin: 0 auto 0.5rem;
+            color: var(--border-color);
         }
         ::-webkit-scrollbar {
             width: 0.5rem;
@@ -405,6 +497,10 @@
             .copy-all-btn {
                 margin-top: 0.5rem;
             }
+            .copy-options-level2 {
+                left: auto;
+                right: 100%;
+            }
         }
     </style>
 </head>
@@ -416,20 +512,28 @@
         <main id="mainContent">
             <div id="searchSection">
                 <div class="search-container">
-                    <input type="text" id="searchInput" placeholder="Search for a Movie or TV Show..." aria-label="Search for a Movie or TV Show" autocomplete="off" aria-controls="searchResults" aria-autocomplete="list">
+                    <input type="text" id="searchInput" placeholder="Search for a Movie or TV Show..." aria-label="Search for a Movie or TV Show" autocomplete="off" aria-controls="searchResults" aria-autocomplete="list" autofocus>
                     <div class="search-adornment">
                         <button type="button" id="clearSearchBtn" class="clear-search-btn" aria-label="Clear search" hidden>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
-                        <div id="loader" hidden></div>
+                        <div id="main-loader" class="loader" hidden></div>
                     </div>
                 </div>
-                <div id="searchResults" role="listbox" aria-label="Search Results"></div>
+                <div id="searchResults" role="listbox" aria-label="Search Results" hidden></div>
                 <div id="a11y-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
             </div>
-            <div id="detailsSection"></div>
+            <div id="detailsSection">
+                <div class="empty-state" id="welcome-message">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9A2.25 2.25 0 004.5 18.75z" />
+                    </svg>
+                    <p style="font-weight: 600;">Ready to Organize Your Media Collection?</p>
+                    <p style="font-size: 0.875rem; color: var(--tertiary-text); margin-top: 0.25rem;">Start by Searching for a Movie or TV Show.</p>
+                </div>
+            </div>
         </main>
     </div>
     <script>
@@ -447,30 +551,32 @@
                     movie: 'movie',
                     tv: 'tv',
                 },
+                copyTypes: {
+                    names: 'names',
+                    rename: 'rename'
+                },
                 placeholderImg: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 3' fill='%231f2937'%3E%3Crect width='2' height='3'/%3E%3C/svg%3E"
             };
             const searchInput = document.getElementById('searchInput');
             const searchResults = document.getElementById('searchResults');
             const detailsSection = document.getElementById('detailsSection');
-            const loader = document.getElementById('loader');
+            const mainLoader = document.getElementById('main-loader');
             const titleButton = document.getElementById('title-button');
             const announcer = document.getElementById('a11y-announcer');
             const clearSearchBtn = document.getElementById('clearSearchBtn');
             const state = {
                 debounceTimer: null,
-                currentKeyboardFocus: -1,
-                searchResultsData: []
+                currentKeyboardFocus: -1
             };
             let searchResultNodes = [];
             const copyIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25H9.75A2.25 2.25 0 017.5 4.5v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>`;
             const checkIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>`;
-            const fetchData = async (url) => {
-                loader.hidden = false;
+            const errorIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
+            const fetchData = async(url) => {
+                mainLoader.hidden = false;
                 try {
                     const response = await fetch(url);
-                    if (!response.ok) {
-                        throw new Error(`API Error: ${response.status} ${response.statusText}`);
-                    }
+                    if (!response.ok) throw new Error(`API Error: ${response.status} ${response.statusText}`);
                     return await response.json();
                 } catch (error) {
                     console.error("Fetch failed:", error);
@@ -478,17 +584,14 @@
                         error: "Failed to fetch data. Please check your connection or try again later."
                     };
                 } finally {
-                    loader.hidden = true;
+                    mainLoader.hidden = true;
                 }
             };
             const clearAndDisplayError = (container, message) => {
                 container.innerHTML = `<div class="error-message">${message}</div>`;
             };
             const searchMedia = (query) => {
-                if (!query) {
-                    clearSearchResults();
-                    return;
-                }
+                if (!query) return clearSearchResults();
                 const url = `https://api.themoviedb.org/3/search/multi?api_key=${CONFIG.apiKey}&query=${encodeURIComponent(query)}`;
                 fetchData(url).then(data => {
                     if (data.error) return clearAndDisplayError(searchResults, data.error);
@@ -502,8 +605,13 @@
                 fetchData(url).then(data => {
                     if (data.error) return clearAndDisplayError(detailsSection, data.error);
                     if (data) {
-                        if (type === CONFIG.mediaTypes.movie) displayMovieDetails(data);
-                        else displayTvShowDetails(data);
+                        if (type === CONFIG.mediaTypes.movie) {
+                            displayMovieDetails(data);
+                            detailsSection.querySelector('.copy-btn')?.focus();
+                        } else {
+                            displayTvShowDetails(data);
+                            detailsSection.querySelector('#season-select')?.focus();
+                        }
                     }
                 });
             };
@@ -511,13 +619,16 @@
                 const url = `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${CONFIG.apiKey}`;
                 const episodeListContainer = document.querySelector('.episode-list');
                 const copyAllBtn = document.getElementById('copy-all-toggle-btn');
-                if (episodeListContainer) episodeListContainer.innerHTML = '';
+                const seasonSelect = document.getElementById('season-select');
+                if (episodeListContainer) episodeListContainer.innerHTML = `<div class="episode-loader"><div class="loader"></div></div>`;
                 if (copyAllBtn) copyAllBtn.disabled = true;
                 fetchData(url).then(data => {
                     if (data.error) return clearAndDisplayError(episodeListContainer, data.error);
                     if (data && data.episodes && episodeListContainer) {
                         displayEpisodes(data.episodes);
                         updateCopyAllData(data.episodes);
+                        const selectedSeasonName = seasonSelect.options[seasonSelect.selectedIndex].text;
+                        announcer.textContent = `Loaded ${data.episodes.length} episodes for ${selectedSeasonName}.`;
                     }
                 });
             };
@@ -526,19 +637,31 @@
                 temp.textContent = text || '';
                 return temp.innerHTML;
             };
+            const closeSearchOnClickOutside = (e) => {
+                if (!searchResults.hidden && !searchResults.contains(e.target) && e.target !== searchInput) {
+                    clearSearchResults();
+                }
+            };
             const clearSearchResults = () => {
                 searchResults.innerHTML = '';
+                searchResults.hidden = true;
                 state.currentKeyboardFocus = -1;
-                state.searchResultsData = [];
                 searchResultNodes = [];
                 searchInput.removeAttribute('aria-activedescendant');
+                document.removeEventListener('click', closeSearchOnClickOutside);
             };
             const displaySearchResults = (results) => {
                 clearSearchResults();
                 const filteredResults = results.filter(r => r.media_type === CONFIG.mediaTypes.movie || r.media_type === CONFIG.mediaTypes.tv);
-                state.searchResultsData = filteredResults;
                 if (filteredResults.length === 0) {
-                    searchResults.innerHTML = `<p style="color: var(--secondary-text); text-align: center; padding: 1rem;">No results found.</p>`;
+                    searchResults.innerHTML = `
+                        <div class="empty-state">
+                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                            </svg>
+                            <p style="font-weight: 600;">No results found</p>
+                            <p style="font-size: 0.875rem; color: var(--tertiary-text); margin-top: 0.25rem;">We couldn't find anything for your search.</p>
+                        </div>`;
                     announcer.textContent = 'No results found.';
                 } else {
                     const fragment = document.createDocumentFragment();
@@ -553,7 +676,7 @@
                         const title = result.title || result.name;
                         const posterUrl = result.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.thumbnail}${result.poster_path}` : CONFIG.placeholderImg;
                         item.innerHTML = `
-                            <img class="poster-image" data-poster-path="${result.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(title)}" loading="lazy">
+                            <img class="poster-image" data-poster-path="${result.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(title)}" loading="lazy" onerror="this.onerror=null;this.src='${CONFIG.placeholderImg}';">
                             <div class="info">
                                 <p class="title">${sanitizeText(title)}</p>
                                 <p class="meta">${year} &bull; ${result.media_type.toUpperCase()}</p>
@@ -563,10 +686,11 @@
                     searchResults.appendChild(fragment);
                     searchResultNodes = searchResults.querySelectorAll('.search-result-item');
                     announcer.textContent = `${filteredResults.length} results found. Use arrow keys to navigate.`;
+                    document.addEventListener('click', closeSearchOnClickOutside);
                 }
+                searchResults.hidden = false;
             };
-            const createNameBlock = (title, name) => {
-                return `
+            const createNameBlock = (title, name) => `
                 <div class="name-block">
                     <h3>${title}</h3>
                     <div class="name-line">
@@ -574,12 +698,11 @@
                         <button class="copy-btn" data-copy-text="${sanitizeText(name)}" aria-label="Copy ${title}">${copyIconSVG}</button>
                     </div>
                 </div>`;
-            };
             const displayMovieDetails = (movie) => {
                 const posterUrl = movie.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.poster}${movie.poster_path}` : CONFIG.placeholderImg;
                 detailsSection.innerHTML = `
                     <div class="details-header">
-                        <img class="poster-image" data-poster-path="${movie.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(movie.original_title)}">
+                        <img class="poster-image" data-poster-path="${movie.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(movie.original_title)}" onerror="this.onerror=null;this.src='${CONFIG.placeholderImg}';">
                         <div class="details-info">
                             ${createNameBlock('Title', movie.original_title)}
                         </div>
@@ -588,12 +711,10 @@
             const displayTvShowDetails = (tvShow) => {
                 const posterUrl = tvShow.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.poster}${tvShow.poster_path}` : CONFIG.placeholderImg;
                 const sortedSeasons = tvShow.seasons.sort((a, b) => a.season_number - b.season_number);
-                const seasonOptions = sortedSeasons.map(season =>
-                    `<option value="${season.season_number}">${sanitizeText(season.name)}</option>`
-                ).join('');
+                const seasonOptions = sortedSeasons.map(season => `<option value="${season.season_number}">${sanitizeText(season.name)}</option>`).join('');
                 detailsSection.innerHTML = `
                     <div class="details-header">
-                        <img class="poster-image" data-poster-path="${tvShow.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(tvShow.original_name)}">
+                        <img class="poster-image" data-poster-path="${tvShow.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(tvShow.original_name)}" onerror="this.onerror=null;this.src='${CONFIG.placeholderImg}';">
                         <div class="details-info">
                            ${createNameBlock('Title', tvShow.original_name)}
                         </div>
@@ -602,10 +723,22 @@
                         <label for="season-select" class="visually-hidden">Select a Season</label>
                         <select id="season-select" data-tv-id="${tvShow.id}" aria-label="Select a season">${seasonOptions}</select>
                         <div class="copy-container">
-                            <button id="copy-all-toggle-btn" class="copy-all-btn" disabled>Copy All</button>
+                            <button id="copy-all-toggle-btn" class="copy-all-btn" disabled><span class="btn-text">Copy All</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z" clip-rule="evenodd" /></svg></button>
                             <div id="copy-options" class="copy-options" hidden>
-                                <button class="copy-option" data-copy-type="names">Names Only</button>
-                                <button class="copy-option" data-copy-type="rename">Bulk Rename</button>
+                                <button class="copy-option" data-copy-type="names"><span>Names Only</span></button>
+                                <div class="copy-option-submenu-container">
+                                    <button class="copy-option" aria-haspopup="true" aria-expanded="false">
+                                        <span>Bulk Rename</span>
+                                        <svg class="submenu-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                    <div class="copy-options-level2">
+                                        <button class="copy-option" data-copy-type="rename" data-extension="mkv"><span>.mkv</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="mp4"><span>.mp4</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="mov"><span>.mov</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="avi"><span>.avi</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="wmv"><span>.wmv</span></button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -615,8 +748,9 @@
             const displayEpisodes = (episodes) => {
                 const episodeListContainer = document.querySelector('.episode-list');
                 if (!episodeListContainer) return;
+                episodeListContainer.innerHTML = '';
                 if (episodes.length === 0) {
-                    episodeListContainer.innerHTML = `<p style="color: var(--secondary-text); text-align: center; padding: 1rem;">No episode data available.</p>`;
+                    episodeListContainer.innerHTML = `<p style="color: var(--secondary-text); text-align: center; padding: 1rem;">No episode data available for this season.</p>`;
                     return;
                 }
                 const fragment = document.createDocumentFragment();
@@ -631,7 +765,6 @@
                         <button class="copy-btn" data-copy-text="${sanitizeText(episode.name)}" aria-label="Copy episode name">${copyIconSVG}</button>`;
                     fragment.appendChild(item);
                 });
-                episodeListContainer.innerHTML = '';
                 episodeListContainer.appendChild(fragment);
             };
             const updateCopyAllData = (episodes) => {
@@ -639,35 +772,37 @@
                 const copyContainer = document.querySelector('.copy-container');
                 if (!copyAllBtn || !copyContainer || episodes.length === 0) return;
                 const namesOnly = episodes.map(e => e.name).join('\n');
-                const bulkRename = episodes.map(e => `E${String(e.episode_number).padStart(2, '0')} - ${e.name}.mkv`).join('\n');
+                const relevantEpisodeData = episodes.map(e => ({
+                    name: e.name,
+                    episode_number: e.episode_number
+                }));
+                copyContainer.dataset.episodesJson = JSON.stringify(relevantEpisodeData);
                 copyContainer.dataset.copyNames = namesOnly;
-                copyContainer.dataset.copyRename = bulkRename;
                 copyAllBtn.disabled = false;
             };
-            const handleCopyClick = async (btn, textToCopy) => {
+            const handleCopyClick = async(btn, textToCopy) => {
                 if (!textToCopy || btn.disabled) return;
-                const originalContent = btn.innerHTML;
+                const originalContentHTML = btn.innerHTML;
                 const feedbackDuration = 1200;
-                const performCopy = async () => {
+                const performCopy = async() => {
                     try {
                         await navigator.clipboard.writeText(textToCopy);
                         return true;
                     } catch (err) {
-                        console.warn('Modern clipboard API failed, falling back.', err);
-                        const textArea = document.createElement("textarea");
-                        textArea.value = textToCopy;
-                        textArea.style.position = "fixed";
-                        textArea.style.left = "-9999px";
-                        document.body.appendChild(textArea);
-                        textArea.focus();
-                        textArea.select();
                         try {
+                            const textArea = document.createElement("textarea");
+                            textArea.value = textToCopy;
+                            textArea.style.position = "fixed";
+                            textArea.style.left = "-9999px";
+                            document.body.appendChild(textArea);
+                            textArea.focus();
+                            textArea.select();
                             const success = document.execCommand('copy');
                             document.body.removeChild(textArea);
-                            return success;
+                            if (!success) throw new Error('Fallback copy failed');
+                            return true;
                         } catch (fallbackErr) {
-                            console.error('Fallback copy method failed:', fallbackErr);
-                            document.body.removeChild(textArea);
+                            console.error('All copy methods failed:', fallbackErr);
                             return false;
                         }
                     }
@@ -677,10 +812,13 @@
                 if (wasCopied) {
                     btn.innerHTML = checkIconSVG;
                     btn.classList.add('copied');
+                } else {
+                    btn.innerHTML = errorIconSVG;
+                    btn.classList.add('error');
                 }
                 setTimeout(() => {
-                    btn.innerHTML = originalContent;
-                    btn.classList.remove('copied');
+                    btn.innerHTML = originalContentHTML;
+                    btn.classList.remove('copied', 'error');
                     btn.disabled = false;
                 }, feedbackDuration);
             };
@@ -689,73 +827,118 @@
                 const highQualityUrl = `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.original}${posterPath}`;
                 window.open(highQualityUrl, '_blank');
             };
-            const toTitleCase = (str, live = false) => {
+            const toTitleCase = (str) => {
                 if (!str) return '';
-                const minorWords = new Set(['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'so', 'yet', 'on', 'at', 'by', 'in', 'of']);
-                let words = str.split(' ');
-                let effectiveLastWordIndex = words.length - 1;
-                while (words[effectiveLastWordIndex] === '' && effectiveLastWordIndex > 0) {
-                    effectiveLastWordIndex--;
-                }
-                return words.map((word, i) => {
-                    if (word === "") return "";
-                    let lowerWord = word.toLowerCase();
-                    const shouldCapitalize =
-                        i === 0 ||
-                        !minorWords.has(lowerWord) ||
-                        (i > 0 && words[i - 1].endsWith(':')) ||
-                        (!live && i === effectiveLastWordIndex);
-                    if (shouldCapitalize) {
-                        if (lowerWord.includes('-')) {
-                            return lowerWord.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('-');
-                        }
-                        return lowerWord.charAt(0).toUpperCase() + lowerWord.slice(1);
+                const minorWords = new Set(['a', 'an', 'the', 'and', 'but', 'or', 'nor', 'for', 'so', 'yet', 'as', 'at', 'by', 'in', 'of', 'off', 'on', 'to', 'up']);
+                const capitalize = (word) => {
+                    if (word.length > 1 && word.toUpperCase() === word) {
+                        return word;
                     }
-                    return lowerWord;
+                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                };
+                const words = str.split(' ');
+                return words.map((word, index) => {
+                    if (word === "") return "";
+                    const lowerWord = word.toLowerCase();
+                    if (index === 0 || index === words.length - 1) {
+                        return capitalize(word);
+                    }
+                    if (index > 0 && words[index - 1].endsWith(':')) {
+                        return capitalize(word);
+                    }
+                    if (word.includes('-')) {
+                        return word.split('-').map((part, partIndex) => {
+                            if (partIndex === 0) return capitalize(part);
+                            if (minorWords.has(part.toLowerCase())) return part.toLowerCase();
+                            return capitalize(part);
+                        }).join('-');
+                    }
+                    if (minorWords.has(lowerWord)) {
+                        return lowerWord;
+                    }
+                    return capitalize(word);
                 }).join(' ');
             };
-            const closeCopyOptionsOnClickOutside = (e) => {
-                const copyOptions = document.getElementById('copy-options');
-                if (copyOptions && !e.target.closest('.copy-container')) {
-                    copyOptions.hidden = true;
-                    document.removeEventListener('click', closeCopyOptionsOnClickOutside);
+            const handleCopyOptionsKeydown = (e) => {
+                const activeElement = document.activeElement;
+                if (!activeElement.classList.contains('copy-option')) return;
+                const currentMenu = activeElement.closest('.copy-options, .copy-options-level2');
+                if (!currentMenu) return;
+                const options = Array.from(currentMenu.querySelectorAll(':scope > .copy-option, :scope > .copy-option-submenu-container > .copy-option'));
+                const currentIndex = options.indexOf(activeElement);
+                switch (e.key) {
+                    case 'ArrowUp':
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        const direction = e.key === 'ArrowDown' ? 1 : -1;
+                        const nextIndex = (currentIndex + direction + options.length) % options.length;
+                        options[nextIndex]?.focus();
+                        break;
+                    case 'ArrowRight':
+                        if (activeElement.parentElement.classList.contains('copy-option-submenu-container')) {
+                            e.preventDefault();
+                            const submenu = activeElement.nextElementSibling;
+                            submenu.querySelector('.copy-option')?.focus();
+                        }
+                        break;
+                    case 'ArrowLeft':
+                        if (currentMenu.classList.contains('copy-options-level2')) {
+                            e.preventDefault();
+                            currentMenu.parentElement.querySelector('.copy-option')?.focus();
+                        }
+                        break;
+                    case 'Enter':
+                        if (!activeElement.parentElement.classList.contains('copy-option-submenu-container')) {
+                            activeElement.click();
+                        }
+                        break;
+                    case 'Escape':
+                        e.preventDefault();
+                        if (currentMenu.classList.contains('copy-options-level2')) {
+                            currentMenu.parentElement.querySelector('.copy-option')?.focus();
+                        } else {
+                            document.getElementById('copy-options').hidden = true;
+                            document.getElementById('copy-all-toggle-btn')?.focus();
+                        }
+                        break;
                 }
             };
             searchInput.addEventListener('input', () => {
                 const originalValue = searchInput.value;
                 const cursorPosition = searchInput.selectionStart;
-                const titleCasedValueLive = toTitleCase(originalValue, true);
-                if (originalValue !== titleCasedValueLive) {
-                    searchInput.value = titleCasedValueLive;
+                const titleCasedValue = toTitleCase(originalValue);
+                if (originalValue !== titleCasedValue) {
+                    searchInput.value = titleCasedValue;
                     searchInput.setSelectionRange(cursorPosition, cursorPosition);
                 }
                 clearTimeout(state.debounceTimer);
                 clearSearchBtn.hidden = searchInput.value.length === 0;
+                if (searchInput.value.length === 0) {
+                    clearSearchResults();
+                    return;
+                }
                 state.debounceTimer = setTimeout(() => {
-                    const currentValue = searchInput.value;
-                    const finalCursorPosition = searchInput.selectionStart;
-                    const titleCasedValueFinal = toTitleCase(currentValue, false);
-                    if (currentValue !== titleCasedValueFinal) {
-                        searchInput.value = titleCasedValueFinal;
-                        searchInput.setSelectionRange(finalCursorPosition, finalCursorPosition);
-                    }
-                    searchMedia(titleCasedValueFinal.trim());
+                    searchMedia(searchInput.value.trim());
                 }, CONFIG.debounceDelay);
             });
             searchInput.addEventListener('keydown', (e) => {
+                if (searchResults.hidden) return;
+                if (e.key === 'Escape') return clearSearchResults();
                 if (searchResultNodes.length === 0) return;
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     state.currentKeyboardFocus = (state.currentKeyboardFocus + 1) % searchResultNodes.length;
-                    setActiveResult();
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     state.currentKeyboardFocus = (state.currentKeyboardFocus - 1 + searchResultNodes.length) % searchResultNodes.length;
-                    setActiveResult();
                 } else if (e.key === 'Enter' && state.currentKeyboardFocus > -1) {
                     e.preventDefault();
                     searchResultNodes[state.currentKeyboardFocus].click();
+                    return;
+                } else {
+                    return;
                 }
+                setActiveResult();
             });
             const setActiveResult = () => {
                 searchResultNodes.forEach((item, index) => {
@@ -783,35 +966,54 @@
             detailsSection.addEventListener('click', (e) => {
                 const target = e.target;
                 const poster = target.closest('.poster-image');
-                if (poster) {
-                    openPosterInNewTab(poster.dataset.posterPath);
-                    return;
-                }
+                if (poster) return openPosterInNewTab(poster.dataset.posterPath);
                 const copyBtn = target.closest('.copy-btn');
                 if (copyBtn) {
-                    handleCopyClick(copyBtn, copyBtn.dataset.copyText);
-                    return;
+                    return handleCopyClick(copyBtn, copyBtn.dataset.copyText);
                 }
                 const toggleBtn = target.closest('#copy-all-toggle-btn');
                 if (toggleBtn) {
                     const copyOptions = document.getElementById('copy-options');
+                    if (toggleBtn.classList.contains('copied') || toggleBtn.classList.contains('error')) return;
                     const isHidden = copyOptions.hidden;
-                    copyOptions.hidden = !isHidden;
+                    const closeMenu = () => {
+                        copyOptions.hidden = true;
+                        toggleBtn.classList.remove('dropdown-open');
+                        document.removeEventListener('click', handleOutsideClick);
+                        copyOptions.removeEventListener('keydown', handleCopyOptionsKeydown);
+                    };
+                    const handleOutsideClick = (event) => {
+                        if (!toggleBtn.parentElement.contains(event.target)) {
+                            closeMenu();
+                        }
+                    };
                     if (isHidden) {
-                        document.addEventListener('click', closeCopyOptionsOnClickOutside);
+                        copyOptions.hidden = false;
+                        toggleBtn.classList.add('dropdown-open');
+                        copyOptions.addEventListener('keydown', handleCopyOptionsKeydown);
+                        setTimeout(() => document.addEventListener('click', handleOutsideClick), 0);
                     } else {
-                        document.removeEventListener('click', closeCopyOptionsOnClickOutside);
+                        closeMenu();
                     }
                     return;
                 }
                 const copyOptionBtn = target.closest('.copy-option');
-                if (copyOptionBtn) {
+                if (copyOptionBtn && !copyOptionBtn.hasAttribute('aria-haspopup')) {
                     const copyContainer = target.closest('.copy-container');
                     const copyType = copyOptionBtn.dataset.copyType;
-                    const textToCopy = (copyType === 'names') ? copyContainer.dataset.copyNames : copyContainer.dataset.copyRename;
-                    document.getElementById('copy-options').hidden = true;
-                    document.removeEventListener('click', closeCopyOptionsOnClickOutside);
-                    handleCopyClick(document.getElementById('copy-all-toggle-btn'), textToCopy);
+                    let textToCopy;
+                    if (copyType === CONFIG.copyTypes.names) {
+                        textToCopy = copyContainer.dataset.copyNames;
+                    } else if (copyType === CONFIG.copyTypes.rename) {
+                        const extension = copyOptionBtn.dataset.extension;
+                        const episodes = JSON.parse(copyContainer.dataset.episodesJson);
+                        textToCopy = episodes.map(e => `E${String(e.episode_number).padStart(2, '0')} - ${e.name}.${extension}`).join('\n');
+                    }
+                    if (textToCopy) {
+                        document.getElementById('copy-options').hidden = true;
+                        document.getElementById('copy-all-toggle-btn').classList.remove('dropdown-open');
+                        handleCopyClick(document.getElementById('copy-all-toggle-btn'), textToCopy);
+                    }
                 }
             });
             detailsSection.addEventListener('change', (e) => {
@@ -828,10 +1030,27 @@
             };
             const resetApp = () => {
                 clearSearchInput();
-                detailsSection.innerHTML = '';
+                detailsSection.innerHTML = `<div class="empty-state" id="welcome-message">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9A2.25 2.25 0 004.5 18.75z" />
+                    </svg>
+                    <p style="font-weight: 600;">Ready to Organize Your Media Collection?</p>
+                    <p style="font-size: 0.875rem; color: var(--tertiary-text); margin-top: 0.25rem;">Start by Searching for a Movie or TV Show.</p>
+                </div>`;
             };
             clearSearchBtn.addEventListener('click', clearSearchInput);
             titleButton.addEventListener('click', resetApp);
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    searchInput.classList.add('search-focus-flash');
+                    searchInput.focus();
+                    setTimeout(() => {
+                        searchInput.classList.remove('search-focus-flash');
+                    }, 500);
+                }
+            });
+            searchInput.focus();
         })();
     </script>
 </body>
