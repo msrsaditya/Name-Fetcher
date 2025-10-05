@@ -532,7 +532,7 @@
                         <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9A2.25 2.25 0 004.5 18.75z" />
                     </svg>
                     <p style="font-weight: 600;">Ready to Organize Your Media Collection?</p>
-                    <p style="font-size: 0.875rem; color: var(--tertiary-text); margin-top: 0.25rem;">Start by Searching for a Movie or TV Show.</p>
+                    <p style="font-size: 0.875rem; color: var(--secondary-text); margin-top: 0.25rem;">Start by Searching for a Movie or TV Show.</p>
                 </div>
             </div>
         </main>
@@ -733,11 +733,11 @@
                                         <svg class="submenu-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
                                     </button>
                                     <div class="copy-options-level2">
-                                        <button class="copy-option" data-copy-type="rename" data-extension="mkv"><span>.mkv</span></button>
-                                        <button class="copy-option" data-copy-type="rename" data-extension="mp4"><span>.mp4</span></button>
-                                        <button class="copy-option" data-copy-type="rename" data-extension="mov"><span>.mov</span></button>
-                                        <button class="copy-option" data-copy-type="rename" data-extension="avi"><span>.avi</span></button>
-                                        <button class="copy-option" data-copy-type="rename" data-extension="wmv"><span>.wmv</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="mkv"><span>MKV</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="mp4"><span>MP4</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="mov"><span>MOV</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="avi"><span>AVI</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="wmv"><span>WMV</span></button>
                                     </div>
                                 </div>
                             </div>
@@ -1008,8 +1008,14 @@
                     if (copyOptionBtn.hasAttribute('aria-haspopup')) {
                         e.preventDefault();
                         const submenuContainer = copyOptionBtn.parentElement;
-                        const isExpanded = submenuContainer.classList.toggle('submenu-open');
-                        copyOptionBtn.setAttribute('aria-expanded', isExpanded);
+                        if (submenuContainer.classList.contains('submenu-open')) {
+                            submenuContainer.classList.remove('submenu-open');
+                            copyOptionBtn.setAttribute('aria-expanded', 'false');
+                            copyOptionBtn.blur();
+                        } else {
+                            submenuContainer.classList.add('submenu-open');
+                            copyOptionBtn.setAttribute('aria-expanded', 'true');
+                        }
                         return;
                     }
                     const copyContainer = target.closest('.copy-container');
@@ -1048,7 +1054,7 @@
                       <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9A2.25 2.25 0 004.5 18.75z" />
                     </svg>
                     <p style="font-weight: 600;">Ready to Organize Your Media Collection?</p>
-                    <p style="font-size: 0.875rem; color: var(--tertiary-text); margin-top: 0.25rem;">Start by Searching for a Movie or TV Show.</p>
+                    <p style="font-size: 0.875rem; color: var(--secondary-text); margin-top: 0.25rem;">Start by Searching for a Movie or TV Show.</p>
                 </div>`;
             };
             clearSearchBtn.addEventListener('click', clearSearchInput);
