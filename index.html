@@ -157,24 +157,67 @@
         .search-result-item.active {
             background-color: var(--panel-hover);
         }
-        .search-result-item img,
-        .details-header img {
+        .poster-image {
             object-fit: cover;
             background-color: var(--panel-hover);
-        }
-        .poster-image {
             cursor: pointer;
-            transition: transform 150ms ease;
-            touch-action: manipulation;
+            display: block;
         }
-        .poster-image:hover {
+        .poster-container {
+            position: relative;
+            flex-shrink: 0;
+            cursor: pointer;
+            border-radius: inherit;
+            overflow: hidden;
+            transition: transform 150ms ease;
+        }
+        .poster-container:hover {
             transform: scale(1.03);
         }
-        .search-result-item .poster-image {
+        .play-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 150ms ease;
+            pointer-events: none;
+        }
+        .poster-container:hover .play-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .play-trailer-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .play-trailer-btn svg {
+            width: 2.5rem;
+            height: 2.5rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            transition: transform 150ms ease, color 150ms ease;
+        }
+        .play-trailer-btn:hover svg {
+            transform: scale(1.1);
+            color: white;
+        }
+        .search-result-item .poster-container {
             width: 45px;
             height: 67px;
             border-radius: 0.25rem;
             margin-right: 1rem;
+        }
+        .search-result-item .poster-image {
+            width: 100%;
+            height: 100%;
         }
         .search-result-item .info {
             flex-grow: 1;
@@ -197,11 +240,14 @@
             gap: 1.5rem;
             align-items: flex-start;
         }
-        .details-header .poster-image {
+        .details-header .poster-container {
             width: 128px;
             height: 192px;
             border-radius: 0.5rem;
-            flex-shrink: 0;
+        }
+        .details-header .poster-image {
+            width: 100%;
+            height: 100%;
         }
         .details-info {
             flex-grow: 1;
@@ -472,6 +518,102 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--border-color);
         }
+        #trailer-modal, #poster-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 200ms ease, visibility 200ms ease;
+            backdrop-filter: blur(8px);
+        }
+        #poster-modal {
+            z-index: 35;
+            padding: 1rem;
+        }
+        #trailer-modal.visible, #poster-modal.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .trailer-container, .poster-modal-content {
+            position: relative;
+            transform: scale(0.95);
+            transition: transform 200ms ease;
+        }
+        .trailer-container {
+            width: 90%;
+            max-width: 960px;
+            aspect-ratio: 16 / 9;
+        }
+        .poster-modal-content {
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+        #trailer-modal.visible .trailer-container,
+        #poster-modal.visible .poster-modal-content {
+            transform: scale(1);
+        }
+        .trailer-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 0.5rem;
+        }
+        #full-poster-img {
+            display: block;
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 0.5rem;
+        }
+        #close-trailer-btn, #close-poster-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            border-radius: 9999px;
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 150ms ease;
+        }
+        #close-trailer-btn:hover, #close-poster-btn:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        #close-trailer-btn svg, #close-poster-btn svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        #toast-notification {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translate(-50%, 200%);
+            background-color: var(--panel-bg);
+            color: var(--primary-text);
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            z-index: 40;
+            font-size: 0.875rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: transform 300ms ease-in-out;
+        }
+        #toast-notification.visible {
+            transform: translate(-50%, 0);
+        }
         @media (max-width: 640px) {
             .container {
                 padding: 1rem;
@@ -487,7 +629,7 @@
                 align-items: center;
                 text-align: center;
             }
-            .details-header img {
+            .details-header .poster-container {
                 width: 192px;
                 height: 288px;
             }
@@ -537,6 +679,23 @@
             </div>
         </main>
     </div>
+    <div id="trailer-modal">
+        <div class="trailer-container">
+            <iframe id="trailer-iframe" allow="autoplay; fullscreen" allowfullscreen></iframe>
+            <button id="close-trailer-btn" aria-label="Close trailer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+    </div>
+    <div id="poster-modal">
+        <div class="poster-modal-content">
+            <img id="full-poster-img" alt="Full-size poster">
+            <button id="close-poster-btn" aria-label="Close poster view">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+    </div>
+    <div id="toast-notification"></div>
     <script>
         (() => {
             const CONFIG = {
@@ -565,15 +724,22 @@
             const titleButton = document.getElementById('title-button');
             const announcer = document.getElementById('a11y-announcer');
             const clearSearchBtn = document.getElementById('clearSearchBtn');
+            const trailerModal = document.getElementById('trailer-modal');
+            const trailerIframe = document.getElementById('trailer-iframe');
+            const posterModal = document.getElementById('poster-modal');
+            const fullPosterImg = document.getElementById('full-poster-img');
+            const toastNotification = document.getElementById('toast-notification');
             const state = {
                 debounceTimer: null,
-                currentKeyboardFocus: -1
+                currentKeyboardFocus: -1,
+                toastTimer: null
             };
             let searchResultNodes = [];
             const copyIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25H9.75A2.25 2.25 0 017.5 4.5v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>`;
             const checkIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>`;
             const errorIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
-            const fetchData = async(url) => {
+            const playIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.647c1.295.748 1.295 2.539 0 3.286L7.279 20.99c-1.25.72-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" /></svg>`;
+            const fetchData = async (url) => {
                 mainLoader.hidden = false;
                 try {
                     const response = await fetch(url);
@@ -651,18 +817,21 @@
                 searchInput.removeAttribute('aria-activedescendant');
                 document.removeEventListener('click', closeSearchOnClickOutside);
             };
+            const createPosterHTML = (posterPath, altText, size = 'thumbnail') => {
+                const posterUrl = posterPath ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes[size]}${posterPath}` : CONFIG.placeholderImg;
+                return `
+                    <div class="poster-container">
+                        <img class="poster-image" data-poster-path="${posterPath}" src="${posterUrl}" alt="${altText}" loading="lazy" onerror="this.onerror=null;this.src='${CONFIG.placeholderImg}';">
+                        <div class="play-overlay">
+                            <button type="button" class="play-trailer-btn" aria-label="Watch trailer for ${altText}">${playIconSVG}</button>
+                        </div>
+                    </div>`;
+            };
             const displaySearchResults = (results) => {
                 clearSearchResults();
                 const filteredResults = results.filter(r => r.media_type === CONFIG.mediaTypes.movie || r.media_type === CONFIG.mediaTypes.tv);
                 if (filteredResults.length === 0) {
-                    searchResults.innerHTML = `
-                        <div class="empty-state">
-                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                            </svg>
-                            <p style="font-weight: 600;">No results found</p>
-                            <p style="font-size: 0.875rem; color: var(--tertiary-text); margin-top: 0.25rem;">We couldn't find anything for your search.</p>
-                        </div>`;
+                    searchResults.innerHTML = `<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg><p style="font-weight: 600;">No results found</p><p style="font-size: 0.875rem; color: var(--tertiary-text); margin-top: 0.25rem;">We couldn't find anything for your search.</p></div>`;
                     announcer.textContent = 'No results found.';
                 } else {
                     const fragment = document.createDocumentFragment();
@@ -675,11 +844,11 @@
                         item.setAttribute('role', 'option');
                         const year = result.release_date?.split('-')[0] || result.first_air_date?.split('-')[0] || 'N/A';
                         const title = result.title || result.name;
-                        const posterUrl = result.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.thumbnail}${result.poster_path}` : CONFIG.placeholderImg;
+                        const sanitizedTitle = sanitizeText(title);
                         item.innerHTML = `
-                            <img class="poster-image" data-poster-path="${result.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(title)}" loading="lazy" onerror="this.onerror=null;this.src='${CONFIG.placeholderImg}';">
+                            ${createPosterHTML(result.poster_path, `Poster for ${sanitizedTitle}`)}
                             <div class="info">
-                                <p class="title">${sanitizeText(title)}</p>
+                                <p class="title">${sanitizedTitle}</p>
                                 <p class="meta">${year} &bull; ${result.media_type.toUpperCase()}</p>
                             </div>`;
                         fragment.appendChild(item);
@@ -691,59 +860,18 @@
                 }
                 searchResults.hidden = false;
             };
-            const createNameBlock = (title, name) => `
-                <div class="name-block">
-                    <h3>${title}</h3>
-                    <div class="name-line">
-                        <pre>${sanitizeText(name)}</pre>
-                        <button class="copy-btn" data-copy-text="${sanitizeText(name)}" aria-label="Copy ${title}">${copyIconSVG}</button>
-                    </div>
-                </div>`;
+            const createNameBlock = (title, name) => `<div class="name-block"><h3>${title}</h3><div class="name-line"><pre>${sanitizeText(name)}</pre><button class="copy-btn" data-copy-text="${sanitizeText(name)}" aria-label="Copy ${title}">${copyIconSVG}</button></div></div>`;
             const displayMovieDetails = (movie) => {
-                const posterUrl = movie.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.poster}${movie.poster_path}` : CONFIG.placeholderImg;
-                detailsSection.innerHTML = `
-                    <div class="details-header">
-                        <img class="poster-image" data-poster-path="${movie.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(movie.original_title)}" onerror="this.onerror=null;this.src='${CONFIG.placeholderImg}';">
-                        <div class="details-info">
-                            ${createNameBlock('Title', movie.original_title)}
-                        </div>
-                    </div>`;
+                const sanitizedTitle = sanitizeText(movie.original_title);
+                const posterHTML = createPosterHTML(movie.poster_path, `Poster for ${sanitizedTitle}`, 'poster');
+                detailsSection.innerHTML = `<div class="details-header" data-id="${movie.id}" data-type="movie">${posterHTML}<div class="details-info">${createNameBlock('Title', movie.original_title)}</div></div>`;
             };
             const displayTvShowDetails = (tvShow) => {
-                const posterUrl = tvShow.poster_path ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.poster}${tvShow.poster_path}` : CONFIG.placeholderImg;
+                const sanitizedTitle = sanitizeText(tvShow.original_name);
+                const posterHTML = createPosterHTML(tvShow.poster_path, `Poster for ${sanitizedTitle}`, 'poster');
                 const sortedSeasons = tvShow.seasons.sort((a, b) => a.season_number - b.season_number);
                 const seasonOptions = sortedSeasons.map(season => `<option value="${season.season_number}">${sanitizeText(season.name)}</option>`).join('');
-                detailsSection.innerHTML = `
-                    <div class="details-header">
-                        <img class="poster-image" data-poster-path="${tvShow.poster_path}" src="${posterUrl}" alt="Poster for ${sanitizeText(tvShow.original_name)}" onerror="this.onerror=null;this.src='${CONFIG.placeholderImg}';">
-                        <div class="details-info">
-                           ${createNameBlock('Title', tvShow.original_name)}
-                        </div>
-                    </div>
-                    <div class="season-controls">
-                        <label for="season-select" class="visually-hidden">Select a Season</label>
-                        <select id="season-select" data-tv-id="${tvShow.id}" aria-label="Select a season">${seasonOptions}</select>
-                        <div class="copy-container">
-                            <button id="copy-all-toggle-btn" class="copy-all-btn" disabled><span class="btn-text">Copy All</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z" clip-rule="evenodd" /></svg></button>
-                            <div id="copy-options" class="copy-options" hidden>
-                                <button class="copy-option" data-copy-type="names"><span>Names Only</span></button>
-                                <div class="copy-option-submenu-container">
-                                    <button class="copy-option" aria-haspopup="true" aria-expanded="false">
-                                        <span>Bulk Rename</span>
-                                        <svg class="submenu-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
-                                    </button>
-                                    <div class="copy-options-level2">
-                                        <button class="copy-option" data-copy-type="rename" data-extension="mkv"><span>MKV</span></button>
-                                        <button class="copy-option" data-copy-type="rename" data-extension="mp4"><span>MP4</span></button>
-                                        <button class="copy-option" data-copy-type="rename" data-extension="mov"><span>MOV</span></button>
-                                        <button class="copy-option" data-copy-type="rename" data-extension="avi"><span>AVI</span></button>
-                                        <button class="copy-option" data-copy-type="rename" data-extension="wmv"><span>WMV</span></button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="episode-list" tabindex="-1"></div>`;
+                detailsSection.innerHTML = `<div class="details-header" data-id="${tvShow.id}" data-type="tv">${posterHTML}<div class="details-info">${createNameBlock('Title', tvShow.original_name)}</div></div><div class="season-controls"><label for="season-select" class="visually-hidden">Select a Season</label><select id="season-select" data-tv-id="${tvShow.id}" aria-label="Select a season">${seasonOptions}</select><div class="copy-container"><button id="copy-all-toggle-btn" class="copy-all-btn" disabled><span class="btn-text">Copy All</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z" clip-rule="evenodd" /></svg></button><div id="copy-options" class="copy-options" hidden><button class="copy-option" data-copy-type="names"><span>Names Only</span></button><div class="copy-option-submenu-container"><button class="copy-option" aria-haspopup="true" aria-expanded="false"><span>Bulk Rename</span><svg class="submenu-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></button><div class="copy-options-level2"><button class="copy-option" data-copy-type="rename" data-extension="mkv"><span>MKV</span></button><button class="copy-option" data-copy-type="rename" data-extension="mp4"><span>MP4</span></button><button class="copy-option" data-copy-type="rename" data-extension="mov"><span>MOV</span></button><button class="copy-option" data-copy-type="rename" data-extension="avi"><span>AVI</span></button><button class="copy-option" data-copy-type="rename" data-extension="wmv"><span>WMV</span></button></div></div></div></div></div><div class="episode-list" tabindex="-1"></div>`;
                 if (sortedSeasons.length > 0) getSeasonDetails(tvShow.id, sortedSeasons[0].season_number);
             };
             const displayEpisodes = (episodes) => {
@@ -758,12 +886,7 @@
                 episodes.forEach(episode => {
                     const item = document.createElement('div');
                     item.className = 'episode-item';
-                    item.innerHTML = `
-                        <div class="episode-content">
-                            <p class="episode-meta">EPISODE ${episode.episode_number}</p>
-                            <pre>${sanitizeText(episode.name)}</pre>
-                        </div>
-                        <button class="copy-btn" data-copy-text="${sanitizeText(episode.name)}" aria-label="Copy episode name">${copyIconSVG}</button>`;
+                    item.innerHTML = `<div class="episode-content"><p class="episode-meta">EPISODE ${episode.episode_number}</p><pre>${sanitizeText(episode.name)}</pre></div><button class="copy-btn" data-copy-text="${sanitizeText(episode.name)}" aria-label="Copy episode name">${copyIconSVG}</button>`;
                     fragment.appendChild(item);
                 });
                 episodeListContainer.appendChild(fragment);
@@ -781,11 +904,11 @@
                 copyContainer.dataset.copyNames = namesOnly;
                 copyAllBtn.disabled = false;
             };
-            const handleCopyClick = async(btn, textToCopy) => {
+            const handleCopyClick = async (btn, textToCopy) => {
                 if (!textToCopy || btn.disabled) return;
                 const originalContentHTML = btn.innerHTML;
                 const feedbackDuration = 1200;
-                const performCopy = async() => {
+                const performCopy = async () => {
                     try {
                         await navigator.clipboard.writeText(textToCopy);
                         return true;
@@ -823,40 +946,69 @@
                     btn.disabled = false;
                 }, feedbackDuration);
             };
-            const openPosterInNewTab = (posterPath) => {
+            const showToast = (message) => {
+                clearTimeout(state.toastTimer);
+                toastNotification.textContent = message;
+                toastNotification.classList.add('visible');
+                state.toastTimer = setTimeout(() => {
+                    toastNotification.classList.remove('visible');
+                }, 3000);
+            };
+            const fetchAndPlayTrailer = async (mediaId, mediaType) => {
+                const url = `https://api.themoviedb.org/3/${mediaType}/${mediaId}/videos?api_key=${CONFIG.apiKey}`;
+                const data = await fetchData(url);
+                if (data.error || !data.results || data.results.length === 0) {
+                    showToast('No trailer found.');
+                    return;
+                }
+                const trailer = data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube') ||
+                    data.results.find(v => v.type === 'Teaser' && v.site === 'YouTube') ||
+                    data.results.find(v => v.site === 'YouTube');
+                if (trailer) {
+                    trailerIframe.src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1&rel=0`;
+                    trailerModal.classList.add('visible');
+                    requestAnimationFrame(() => {
+                        document.getElementById('close-trailer-btn').focus();
+                    });
+                } else {
+                    showToast('No trailer found.');
+                }
+            };
+            const closeTrailerModal = () => {
+                trailerModal.classList.remove('visible');
+                trailerIframe.src = '';
+            };
+            const openPosterModal = (posterPath) => {
                 if (!posterPath || posterPath === 'null') return;
-                const highQualityUrl = `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.original}${posterPath}`;
-                window.open(highQualityUrl, '_blank');
+                fullPosterImg.src = `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.original}${posterPath}`;
+                posterModal.classList.add('visible');
+                requestAnimationFrame(() => {
+                    document.getElementById('close-poster-btn').focus();
+                });
+            };
+            const closePosterModal = () => {
+                posterModal.classList.remove('visible');
+                fullPosterImg.src = '';
             };
             const toTitleCase = (str) => {
                 if (!str) return '';
                 const minorWords = new Set(['a', 'an', 'the', 'and', 'but', 'or', 'nor', 'for', 'so', 'yet', 'as', 'at', 'by', 'in', 'of', 'off', 'on', 'to', 'up']);
                 const capitalize = (word) => {
-                    if (word.length > 1 && word.toUpperCase() === word) {
-                        return word;
-                    }
+                    if (word.length > 1 && word.toUpperCase() === word) return word;
                     return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
                 };
                 const words = str.split(' ');
                 return words.map((word, index) => {
                     if (word === "") return "";
                     const lowerWord = word.toLowerCase();
-                    if (index === 0 || index === words.length - 1) {
-                        return capitalize(word);
-                    }
-                    if (index > 0 && words[index - 1].endsWith(':')) {
-                        return capitalize(word);
-                    }
-                    if (word.includes('-')) {
-                        return word.split('-').map((part, partIndex) => {
-                            if (partIndex === 0) return capitalize(part);
-                            if (minorWords.has(part.toLowerCase())) return part.toLowerCase();
-                            return capitalize(part);
-                        }).join('-');
-                    }
-                    if (minorWords.has(lowerWord)) {
-                        return lowerWord;
-                    }
+                    if (index === 0 || index === words.length - 1) return capitalize(word);
+                    if (index > 0 && words[index - 1].endsWith(':')) return capitalize(word);
+                    if (word.includes('-')) return word.split('-').map((part, partIndex) => {
+                        if (partIndex === 0) return capitalize(part);
+                        if (minorWords.has(part.toLowerCase())) return part.toLowerCase();
+                        return capitalize(part);
+                    }).join('-');
+                    if (minorWords.has(lowerWord)) return lowerWord;
                     return capitalize(word);
                 }).join(' ');
             };
@@ -878,8 +1030,7 @@
                     case 'ArrowRight':
                         if (activeElement.parentElement.classList.contains('copy-option-submenu-container')) {
                             e.preventDefault();
-                            const submenu = activeElement.nextElementSibling;
-                            submenu.querySelector('.copy-option')?.focus();
+                            activeElement.nextElementSibling.querySelector('.copy-option')?.focus();
                         }
                         break;
                     case 'ArrowLeft':
@@ -889,9 +1040,7 @@
                         }
                         break;
                     case 'Enter':
-                        if (!activeElement.parentElement.classList.contains('copy-option-submenu-container')) {
-                            activeElement.click();
-                        }
+                        if (!activeElement.parentElement.classList.contains('copy-option-submenu-container')) activeElement.click();
                         break;
                     case 'Escape':
                         e.preventDefault();
@@ -955,23 +1104,37 @@
                 });
             };
             searchResults.addEventListener('click', (e) => {
-                const poster = e.target.closest('.poster-image');
-                if (poster) {
-                    e.stopPropagation();
-                    openPosterInNewTab(poster.dataset.posterPath);
+                const item = e.target.closest('.search-result-item');
+                if (!item) return;
+                const playBtn = e.target.closest('.play-trailer-btn');
+                if (playBtn) {
+                    fetchAndPlayTrailer(item.dataset.id, item.dataset.type);
                     return;
                 }
-                const item = e.target.closest('.search-result-item');
-                if (item) getMediaDetails(item.dataset.id, item.dataset.type);
+                const posterContainer = e.target.closest('.poster-container');
+                if (posterContainer) {
+                    const posterImg = posterContainer.querySelector('.poster-image');
+                    openPosterModal(posterImg.dataset.posterPath);
+                    return;
+                }
+                getMediaDetails(item.dataset.id, item.dataset.type);
             });
             detailsSection.addEventListener('click', (e) => {
                 const target = e.target;
-                const poster = target.closest('.poster-image');
-                if (poster) return openPosterInNewTab(poster.dataset.posterPath);
-                const copyBtn = target.closest('.copy-btn');
-                if (copyBtn) {
-                    return handleCopyClick(copyBtn, copyBtn.dataset.copyText);
+                const playBtn = target.closest('.play-trailer-btn');
+                const header = target.closest('.details-header');
+                if (playBtn && header) {
+                    fetchAndPlayTrailer(header.dataset.id, header.dataset.type);
+                    return;
                 }
+                const posterContainer = target.closest('.poster-container');
+                if (posterContainer) {
+                    const posterImg = posterContainer.querySelector('.poster-image');
+                    openPosterModal(posterImg.dataset.posterPath);
+                    return;
+                }
+                const copyBtn = target.closest('.copy-btn');
+                if (copyBtn) return handleCopyClick(copyBtn, copyBtn.dataset.copyText);
                 const toggleBtn = target.closest('#copy-all-toggle-btn');
                 if (toggleBtn) {
                     const copyOptions = document.getElementById('copy-options');
@@ -980,8 +1143,8 @@
                     const closeMenu = () => {
                         const submenuContainer = copyOptions.querySelector('.submenu-open');
                         if (submenuContainer) {
-                           submenuContainer.classList.remove('submenu-open');
-                           submenuContainer.querySelector('[aria-haspopup]').setAttribute('aria-expanded', 'false');
+                            submenuContainer.classList.remove('submenu-open');
+                            submenuContainer.querySelector('[aria-haspopup]').setAttribute('aria-expanded', 'false');
                         }
                         copyOptions.hidden = true;
                         toggleBtn.classList.remove('dropdown-open');
@@ -989,9 +1152,7 @@
                         copyOptions.removeEventListener('keydown', handleCopyOptionsKeydown);
                     };
                     const handleOutsideClick = (event) => {
-                        if (!toggleBtn.parentElement.contains(event.target)) {
-                            closeMenu();
-                        }
+                        if (!toggleBtn.parentElement.contains(event.target)) closeMenu();
                     };
                     if (isHidden) {
                         copyOptions.hidden = false;
@@ -1049,24 +1210,28 @@
             };
             const resetApp = () => {
                 clearSearchInput();
-                detailsSection.innerHTML = `<div class="empty-state" id="welcome-message">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                      <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9A2.25 2.25 0 004.5 18.75z" />
-                    </svg>
-                    <p style="font-weight: 600;">Ready to Organize Your Media Collection?</p>
-                    <p style="font-size: 0.875rem; color: var(--secondary-text); margin-top: 0.25rem;">Start by Searching for a Movie or TV Show.</p>
-                </div>`;
+                detailsSection.innerHTML = `<div class="empty-state" id="welcome-message"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9A2.25 2.25 0 004.5 18.75z" /></svg><p style="font-weight: 600;">Ready to Organize Your Media Collection?</p><p style="font-size: 0.875rem; color: var(--secondary-text); margin-top: 0.25rem;">Start by Searching for a Movie or TV Show.</p></div>`;
             };
             clearSearchBtn.addEventListener('click', clearSearchInput);
             titleButton.addEventListener('click', resetApp);
+            document.getElementById('close-trailer-btn').addEventListener('click', closeTrailerModal);
+            trailerModal.addEventListener('click', (e) => {
+                if (e.target === trailerModal) closeTrailerModal();
+            });
+            document.getElementById('close-poster-btn').addEventListener('click', closePosterModal);
+            posterModal.addEventListener('click', (e) => {
+                if (e.target === posterModal) closePosterModal();
+            });
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
                     searchInput.classList.add('search-focus-flash');
                     searchInput.focus();
-                    setTimeout(() => {
-                        searchInput.classList.remove('search-focus-flash');
-                    }, 500);
+                    setTimeout(() => searchInput.classList.remove('search-focus-flash'), 500);
+                }
+                if (e.key === 'Escape') {
+                    if (trailerModal.classList.contains('visible')) closeTrailerModal();
+                    if (posterModal.classList.contains('visible')) closePosterModal();
                 }
             });
             searchInput.focus();
