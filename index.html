@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Copy original episode and movie names with formatting for use in local personal media libraries">
-    <title>Name Fetcher</title>
+    <title>The Media Library</title>
     <style>
         :root {
             --bg-color: #030712;
@@ -79,8 +79,13 @@
             animation: search-flash 0.5s ease;
         }
         @keyframes search-flash {
-            0%, 100% { box-shadow: 0 0 0 2px var(--accent-color); }
-            50% { box-shadow: 0 0 0 4px var(--accent-color); }
+            0%,
+            100% {
+                box-shadow: 0 0 0 2px var(--accent-color);
+            }
+            50% {
+                box-shadow: 0 0 0 4px var(--accent-color);
+            }
         }
         #searchSection {
             position: relative;
@@ -202,7 +207,7 @@
         .play-trailer-btn svg {
             width: 2.5rem;
             height: 2.5rem;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
             transition: transform 150ms ease, color 150ms ease;
         }
         .play-trailer-btn:hover svg {
@@ -241,8 +246,8 @@
             align-items: flex-start;
         }
         .details-header .poster-container {
-            width: 128px;
-            height: 192px;
+            width: 150px;
+            height: 225px;
             border-radius: 0.5rem;
         }
         .details-header .poster-image {
@@ -252,26 +257,54 @@
         .details-info {
             flex-grow: 1;
         }
-        .name-block {
-            margin-bottom: 1rem;
+        .details-overview {
+            margin-top: 1.5rem;
+            color: var(--secondary-text);
+            font-size: 0.95rem;
+            line-height: 1.7;
         }
-        .name-block h3 {
-            font-size: 0.75rem;
+        .about-section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .about-section h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+        .about-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.25rem;
+        }
+        .about-grid>div {
+            display: flex;
+            flex-direction: column;
+        }
+        .about-grid strong {
             font-weight: 600;
             color: var(--secondary-text);
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+        .about-grid span {
+            font-size: 0.9rem;
+        }
+        .name-block {
+            margin-bottom: 0.5rem;
         }
         .name-block .name-line {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 0.5rem;
         }
         .name-block pre {
             font-family: "SF Mono", "Consolas", "Roboto Mono", "Fira Code", monospace;
             font-size: 1.125rem;
             color: var(--primary-text);
-            margin-top: 0.5rem;
+            margin-top: 0;
             padding: 0;
             white-space: pre-wrap;
             word-break: break-word;
@@ -283,7 +316,7 @@
             border: none;
             cursor: pointer;
             padding: 0.5rem;
-            margin-top: 0.25rem;
+            margin-top: 0;
             margin-right: -0.25rem;
             border-radius: 0.25rem;
             color: var(--secondary-text);
@@ -339,7 +372,7 @@
             border: 1px solid var(--border-color);
             border-radius: 0.5rem;
             padding: 0.75rem 1rem;
-            font-size: 0.875rem;
+            font-size: 1rem;
             font-weight: 500;
             cursor: pointer;
             transition: background-color 150ms, color 150ms;
@@ -347,7 +380,7 @@
             min-width: 100px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             gap: 0.25rem;
             touch-action: manipulation;
         }
@@ -365,7 +398,10 @@
         .copy-all-btn svg {
             width: 1.125rem;
             height: 1.125rem;
-            transition: transform 150ms ease;
+            transition: transform 200ms ease;
+        }
+        .copy-all-btn.dropdown-open svg {
+            transform: rotate(180deg);
         }
         .copy-all-btn.copied svg {
             color: var(--success-icon-color);
@@ -418,6 +454,10 @@
             width: 1rem;
             height: 1rem;
             color: var(--secondary-text);
+            transition: transform 200ms ease;
+        }
+        .copy-option-submenu-container.submenu-open>.copy-option .submenu-arrow {
+            transform: rotate(90deg);
         }
         .copy-options-level2 {
             position: absolute;
@@ -431,9 +471,9 @@
             min-width: 8rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
-        .copy-option-submenu-container:hover > .copy-options-level2,
-        .copy-option-submenu-container:focus-within > .copy-options-level2,
-        .copy-option-submenu-container.submenu-open > .copy-options-level2 {
+        .copy-option-submenu-container:hover>.copy-options-level2,
+        .copy-option-submenu-container:focus-within>.copy-options-level2,
+        .copy-option-submenu-container.submenu-open>.copy-options-level2 {
             display: block;
         }
         .episode-list {
@@ -472,6 +512,70 @@
             white-space: pre-wrap;
             word-break: break-word;
             overflow-wrap: break-word;
+        }
+        #download-section {
+            position: relative;
+            margin-top: 2rem;
+        }
+        #download-toggle-btn {
+            width: 100%;
+            background-color: var(--panel-bg);
+            color: var(--primary-text);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 150ms, color 150ms;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            touch-action: manipulation;
+        }
+        #download-toggle-btn:hover,
+        #download-toggle-btn.dropdown-open {
+            background-color: var(--panel-hover);
+        }
+        #download-toggle-btn svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            transition: transform 200ms ease;
+        }
+        #download-toggle-btn.dropdown-open svg {
+            transform: rotate(180deg);
+        }
+        #download-options {
+            position: absolute;
+            bottom: calc(100% + 0.25rem);
+            left: 0;
+            right: 0;
+            background-color: var(--panel-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            z-index: 20;
+            box-shadow: 0 -4px 6px -1px rgb(0 0 0 / 0.1), 0 -2px 4px -2px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+        }
+        .download-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0.5rem 0.5rem 1.25rem;
+            font-size: 0.9rem;
+            transition: background-color 150ms;
+        }
+        .download-option:hover {
+            background-color: var(--accent-color);
+        }
+        .download-option a {
+            color: var(--primary-text);
+            text-decoration: none;
+            flex-grow: 1;
+        }
+        .download-option .copy-btn {
+            margin-top: 0;
+            margin-right: 0;
         }
         [hidden] {
             display: none !important;
@@ -518,7 +622,8 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--border-color);
         }
-        #trailer-modal, #poster-modal {
+        #trailer-modal,
+        #poster-modal {
             position: fixed;
             top: 0;
             left: 0;
@@ -538,11 +643,13 @@
             z-index: 35;
             padding: 1rem;
         }
-        #trailer-modal.visible, #poster-modal.visible {
+        #trailer-modal.visible,
+        #poster-modal.visible {
             opacity: 1;
             visibility: visible;
         }
-        .trailer-container, .poster-modal-content {
+        .trailer-container,
+        .poster-modal-content {
             position: relative;
             transform: scale(0.95);
             transition: transform 200ms ease;
@@ -573,7 +680,8 @@
             object-fit: contain;
             border-radius: 0.5rem;
         }
-        #close-trailer-btn, #close-poster-btn {
+        #close-trailer-btn,
+        #close-poster-btn {
             position: absolute;
             top: 0.75rem;
             right: 0.75rem;
@@ -590,10 +698,12 @@
             justify-content: center;
             transition: background-color 150ms ease;
         }
-        #close-trailer-btn:hover, #close-poster-btn:hover {
+        #close-trailer-btn:hover,
+        #close-poster-btn:hover {
             background-color: rgba(0, 0, 0, 0.8);
         }
-        #close-trailer-btn svg, #close-poster-btn svg {
+        #close-trailer-btn svg,
+        #close-poster-btn svg {
             width: 1.5rem;
             height: 1.5rem;
         }
@@ -616,7 +726,7 @@
         }
         @media (max-width: 640px) {
             .container {
-                padding: 1rem;
+                padding: 1.5rem 0.75rem;
             }
             .title-button {
                 font-size: 1.75rem;
@@ -644,13 +754,16 @@
                 left: auto;
                 right: 100%;
             }
+            .about-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <button type="button" id="title-button" class="title-button">Name Fetcher</button>
+            <button type="button" id="title-button" class="title-button">The Media Library</button>
         </header>
         <main id="mainContent">
             <div id="searchSection">
@@ -669,13 +782,6 @@
                 <div id="a11y-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
             </div>
             <div id="detailsSection">
-                <div class="empty-state" id="welcome-message">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9A2.25 2.25 0 004.5 18.75z" />
-                    </svg>
-                    <p style="font-weight: 600;">Ready to Organize Your Media Collection?</p>
-                    <p style="font-size: 0.875rem; color: var(--secondary-text); margin-top: 0.25rem;">Start by Searching for a Movie or TV Show.</p>
-                </div>
             </div>
         </main>
     </div>
@@ -683,7 +789,9 @@
         <div class="trailer-container">
             <iframe id="trailer-iframe" allow="autoplay; fullscreen" allowfullscreen></iframe>
             <button id="close-trailer-btn" aria-label="Close trailer">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
             </button>
         </div>
     </div>
@@ -691,7 +799,9 @@
         <div class="poster-modal-content">
             <img id="full-poster-img" alt="Full-size poster">
             <button id="close-poster-btn" aria-label="Close poster view">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
             </button>
         </div>
     </div>
@@ -759,31 +869,36 @@
             };
             const searchMedia = (query) => {
                 if (!query) return clearSearchResults();
-                const url = `https://api.themoviedb.org/3/search/multi?api_key=${CONFIG.apiKey}&query=${encodeURIComponent(query)}`;
+                const url = `https://api.themoviedb.org/3/search/multi?api_key=${CONFIG.apiKey}&language=en-US&query=${encodeURIComponent(query)}`;
                 fetchData(url).then(data => {
                     if (data.error) return clearAndDisplayError(searchResults, data.error);
                     if (data && data.results) displaySearchResults(data.results);
                 });
             };
-            const getMediaDetails = (id, type) => {
+            const getMediaDetails = async (id, type) => {
                 clearSearchResults();
-                detailsSection.innerHTML = '';
-                const url = `https://api.themoviedb.org/3/${type}/${id}?api_key=${CONFIG.apiKey}`;
-                fetchData(url).then(data => {
-                    if (data.error) return clearAndDisplayError(detailsSection, data.error);
-                    if (data) {
-                        if (type === CONFIG.mediaTypes.movie) {
-                            displayMovieDetails(data);
-                            detailsSection.querySelector('.copy-btn')?.focus();
-                        } else {
-                            displayTvShowDetails(data);
-                            detailsSection.querySelector('#season-select')?.focus();
-                        }
+                detailsSection.innerHTML = `<div class="episode-loader" style="padding: 4rem 0;"><div class="loader"></div></div>`;
+                const detailsUrl = `https://api.themoviedb.org/3/${type}/${id}?api_key=${CONFIG.apiKey}&language=en-US`;
+                const creditsUrl = `https://api.themoviedb.org/3/${type}/${id}/credits?api_key=${CONFIG.apiKey}&language=en-US`;
+                const [details, credits] = await Promise.all([
+                    fetchData(detailsUrl),
+                    fetchData(creditsUrl)
+                ]);
+                if (details.error || credits.error) {
+                    return clearAndDisplayError(detailsSection, details.error || credits.error);
+                }
+                if (details) {
+                    if (type === CONFIG.mediaTypes.movie) {
+                        displayMovieDetails(details, credits);
+                        detailsSection.querySelector('.copy-btn')?.focus();
+                    } else {
+                        displayTvShowDetails(details, credits);
+                        detailsSection.querySelector('#season-select')?.focus();
                     }
-                });
+                }
             };
             const getSeasonDetails = (tvId, seasonNumber) => {
-                const url = `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${CONFIG.apiKey}`;
+                const url = `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${CONFIG.apiKey}&language=en-US`;
                 const episodeListContainer = document.querySelector('.episode-list');
                 const copyAllBtn = document.getElementById('copy-all-toggle-btn');
                 const seasonSelect = document.getElementById('season-select');
@@ -860,19 +975,154 @@
                 }
                 searchResults.hidden = false;
             };
-            const createNameBlock = (title, name) => `<div class="name-block"><h3>${title}</h3><div class="name-line"><pre>${sanitizeText(name)}</pre><button class="copy-btn" data-copy-text="${sanitizeText(name)}" aria-label="Copy ${title}">${copyIconSVG}</button></div></div>`;
-            const displayMovieDetails = (movie) => {
-                const sanitizedTitle = sanitizeText(movie.original_title);
+            const createNameBlock = (name) => `<div class="name-block"><div class="name-line"><pre>${sanitizeText(name)}</pre><button class="copy-btn" data-copy-text="${sanitizeText(name)}" aria-label="Copy title">${copyIconSVG}</button></div></div>`;
+            const createAboutDetail = (label, value) => value ? `<div><strong>${label}</strong><span>${value}</span></div>` : '';
+            const displayMovieDetails = (movie, credits) => {
+                const title = movie.title || movie.original_title;
+                const sanitizedTitle = sanitizeText(title);
                 const posterHTML = createPosterHTML(movie.poster_path, `Poster for ${sanitizedTitle}`, 'poster');
-                detailsSection.innerHTML = `<div class="details-header" data-id="${movie.id}" data-type="movie">${posterHTML}<div class="details-info">${createNameBlock('Title', movie.original_title)}</div></div>`;
+                const releaseDate = movie.release_date ? new Date(movie.release_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                }) : 'N/A';
+                const language = movie.original_language ? new Intl.DisplayNames(['en'], {
+                    type: 'language'
+                }).of(movie.original_language) : 'N/A';
+                const rating = movie.vote_count > 0 ? `${movie.vote_average.toFixed(1)} / 10 (${movie.vote_count.toLocaleString()} votes)` : 'N/A';
+                const genres = movie.genres.map(g => g.name).join(', ');
+                const cast = credits.cast.slice(0, 6).map(c => c.name).join(', ');
+                detailsSection.innerHTML = `
+                    <div class="details-header" data-id="${movie.id}" data-type="movie">
+                        ${posterHTML}
+                        <div class="details-info">
+                            ${createNameBlock(title)}
+                            ${movie.overview ? `<p class="details-overview">${sanitizeText(movie.overview)}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="about-section">
+                        <h2>About the Movie</h2>
+                        <div class="about-grid">
+                            ${createAboutDetail('Status', movie.status)}
+                            ${createAboutDetail('Release Date', releaseDate)}
+                            ${createAboutDetail('Genre', genres)}
+                            ${createAboutDetail('Language', language)}
+                            ${createAboutDetail('Rating', rating)}
+                            ${createAboutDetail('Cast', cast)}
+                        </div>
+                    </div>
+                `;
+                appendDownloadSection(movie, CONFIG.mediaTypes.movie);
             };
-            const displayTvShowDetails = (tvShow) => {
-                const sanitizedTitle = sanitizeText(tvShow.original_name);
+            const displayTvShowDetails = (tvShow, credits) => {
+                const title = tvShow.name || tvShow.original_name;
+                const sanitizedTitle = sanitizeText(title);
                 const posterHTML = createPosterHTML(tvShow.poster_path, `Poster for ${sanitizedTitle}`, 'poster');
+                const firstAirDate = tvShow.first_air_date ? new Date(tvShow.first_air_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                }) : 'N/A';
+                const language = tvShow.original_language ? new Intl.DisplayNames(['en'], {
+                    type: 'language'
+                }).of(tvShow.original_language) : 'N/A';
+                const rating = tvShow.vote_count > 0 ? `${tvShow.vote_average.toFixed(1)} / 10 (${tvShow.vote_count.toLocaleString()} votes)` : 'N/A';
+                const genres = tvShow.genres.map(g => g.name).join(', ');
+                const cast = credits.cast.slice(0, 6).map(c => c.name).join(', ');
+                const createdBy = tvShow.created_by.map(c => c.name).join(', ');
                 const sortedSeasons = tvShow.seasons.sort((a, b) => a.season_number - b.season_number);
                 const seasonOptions = sortedSeasons.map(season => `<option value="${season.season_number}">${sanitizeText(season.name)}</option>`).join('');
-                detailsSection.innerHTML = `<div class="details-header" data-id="${tvShow.id}" data-type="tv">${posterHTML}<div class="details-info">${createNameBlock('Title', tvShow.original_name)}</div></div><div class="season-controls"><label for="season-select" class="visually-hidden">Select a Season</label><select id="season-select" data-tv-id="${tvShow.id}" aria-label="Select a season">${seasonOptions}</select><div class="copy-container"><button id="copy-all-toggle-btn" class="copy-all-btn" disabled><span class="btn-text">Copy All</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z" clip-rule="evenodd" /></svg></button><div id="copy-options" class="copy-options" hidden><button class="copy-option" data-copy-type="names"><span>Names Only</span></button><div class="copy-option-submenu-container"><button class="copy-option" aria-haspopup="true" aria-expanded="false"><span>Bulk Rename</span><svg class="submenu-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg></button><div class="copy-options-level2"><button class="copy-option" data-copy-type="rename" data-extension="mkv"><span>MKV</span></button><button class="copy-option" data-copy-type="rename" data-extension="mp4"><span>MP4</span></button><button class="copy-option" data-copy-type="rename" data-extension="mov"><span>MOV</span></button><button class="copy-option" data-copy-type="rename" data-extension="avi"><span>AVI</span></button><button class="copy-option" data-copy-type="rename" data-extension="wmv"><span>WMV</span></button></div></div></div></div></div><div class="episode-list" tabindex="-1"></div>`;
+                detailsSection.innerHTML = `
+                    <div class="details-header" data-id="${tvShow.id}" data-type="tv">
+                        ${posterHTML}
+                        <div class="details-info">
+                            ${createNameBlock(title)}
+                             ${tvShow.overview ? `<p class="details-overview">${sanitizeText(tvShow.overview)}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="season-controls">
+                        <label for="season-select" class="visually-hidden">Select a Season</label>
+                        <select id="season-select" data-tv-id="${tvShow.id}" aria-label="Select a season">${seasonOptions}</select>
+                        <div class="copy-container">
+                            <button id="copy-all-toggle-btn" class="copy-all-btn" disabled>
+                                <span class="btn-text">Copy All</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <div id="copy-options" class="copy-options" hidden>
+                                <button class="copy-option" data-copy-type="names"><span>Names Only</span></button>
+                                <div class="copy-option-submenu-container">
+                                    <button class="copy-option" aria-haspopup="true" aria-expanded="false">
+                                        <span>Bulk Rename</span>
+                                        <svg class="submenu-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                    <div class="copy-options-level2">
+                                        <button class="copy-option" data-copy-type="rename" data-extension="mkv"><span>MKV</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="mp4"><span>MP4</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="mov"><span>MOV</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="avi"><span>AVI</span></button>
+                                        <button class="copy-option" data-copy-type="rename" data-extension="wmv"><span>WMV</span></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="episode-list" tabindex="-1"></div>
+                    <div class="about-section">
+                        <h2>About the Show</h2>
+                        <div class="about-grid">
+                            ${createAboutDetail('Status', tvShow.status)}
+                            ${createAboutDetail('First Aired', firstAirDate)}
+                            ${createAboutDetail('Seasons', tvShow.number_of_seasons)}
+                            ${createAboutDetail('Episodes', tvShow.number_of_episodes)}
+                            ${createAboutDetail('Genre', genres)}
+                            ${createAboutDetail('Language', language)}
+                            ${createAboutDetail('Rating', rating)}
+                            ${createAboutDetail('Cast', cast)}
+                            ${createAboutDetail('Created By', createdBy)}
+                        </div>
+                    </div>
+                `;
                 if (sortedSeasons.length > 0) getSeasonDetails(tvShow.id, sortedSeasons[0].season_number);
+                appendDownloadSection(tvShow, CONFIG.mediaTypes.tv);
+            };
+            const appendDownloadSection = (details, type) => {
+                const title = details.title || details.name;
+                const year = (details.release_date || details.first_air_date)?.split('-')[0];
+                if (!title || !year) return;
+                const query = `${title} ${year}`;
+                const queryEncoded = encodeURIComponent(query);
+                const queryPlus = query.replace(/ /g, '+');
+                const category1337x = type === 'movie' ? 'Movies' : 'TV';
+                const url1337x = `https://1337x.to/sort-category-search/${queryEncoded}/${category1337x}/size/desc/1/`;
+                const urlTpb = `https://thepiratebay.org/search.php?q=${queryPlus}&video=on&search=Pirate+Search&page=0&orderby=`;
+                const urlYts = `https://yts.mx/browse-movies/${queryEncoded}/all/all/0/latest/0/all`;
+                let optionsHTML = `
+                    <div class="download-option">
+                        <a href="${url1337x}" target="_blank" rel="noopener noreferrer">1337X</a>
+                        <button class="copy-btn" data-copy-text="${url1337x}" aria-label="Copy 1337X link">${copyIconSVG}</button>
+                    </div>
+                    <div class="download-option">
+                        <a href="${urlTpb}" target="_blank" rel="noopener noreferrer">TPB</a>
+                        <button class="copy-btn" data-copy-text="${urlTpb}" aria-label="Copy TPB link">${copyIconSVG}</button>
+                    </div>
+                `;
+                if (type === 'movie') {
+                    optionsHTML += `
+                        <div class="download-option">
+                            <a href="${urlYts}" target="_blank" rel="noopener noreferrer">YTS</a>
+                            <button class="copy-btn" data-copy-text="${urlYts}" aria-label="Copy YTS link">${copyIconSVG}</button>
+                        </div>
+                    `;
+                }
+                const downloadSectionHTML = `
+                    <div id="download-section">
+                        <button id="download-toggle-btn">
+                            <span>Download</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z" clip-rule="evenodd" /></svg>
+                        </button>
+                        <div id="download-options" hidden>${optionsHTML}</div>
+                    </div>`;
+                detailsSection.insertAdjacentHTML('beforeend', downloadSectionHTML);
             };
             const displayEpisodes = (episodes) => {
                 const episodeListContainer = document.querySelector('.episode-list');
@@ -955,7 +1205,7 @@
                 }, 3000);
             };
             const fetchAndPlayTrailer = async (mediaId, mediaType) => {
-                const url = `https://api.themoviedb.org/3/${mediaType}/${mediaId}/videos?api_key=${CONFIG.apiKey}`;
+                const url = `https://api.themoviedb.org/3/${mediaType}/${mediaId}/videos?api_key=${CONFIG.apiKey}&language=en-US`;
                 const data = await fetchData(url);
                 if (data.error || !data.results || data.results.length === 0) {
                     showToast('No trailer found.');
@@ -1053,6 +1303,33 @@
                         break;
                 }
             };
+            const handleDropdown = (toggleBtn, optionsMenu) => {
+                if (toggleBtn.classList.contains('copied') || toggleBtn.classList.contains('error')) return;
+                const isHidden = optionsMenu.hidden;
+                const closeMenu = () => {
+                    optionsMenu.hidden = true;
+                    toggleBtn.classList.remove('dropdown-open');
+                    document.removeEventListener('click', handleOutsideClick);
+                    if (optionsMenu.id === 'copy-options') {
+                        optionsMenu.removeEventListener('keydown', handleCopyOptionsKeydown);
+                    }
+                };
+                const handleOutsideClick = (event) => {
+                    if (!toggleBtn.parentElement.contains(event.target)) {
+                        closeMenu();
+                    }
+                };
+                if (isHidden) {
+                    optionsMenu.hidden = false;
+                    toggleBtn.classList.add('dropdown-open');
+                    setTimeout(() => document.addEventListener('click', handleOutsideClick), 0);
+                    if (optionsMenu.id === 'copy-options') {
+                        optionsMenu.addEventListener('keydown', handleCopyOptionsKeydown);
+                    }
+                } else {
+                    closeMenu();
+                }
+            };
             searchInput.addEventListener('input', () => {
                 const originalValue = searchInput.value;
                 const cursorPosition = searchInput.selectionStart;
@@ -1134,34 +1411,21 @@
                     return;
                 }
                 const copyBtn = target.closest('.copy-btn');
-                if (copyBtn) return handleCopyClick(copyBtn, copyBtn.dataset.copyText);
-                const toggleBtn = target.closest('#copy-all-toggle-btn');
-                if (toggleBtn) {
-                    const copyOptions = document.getElementById('copy-options');
-                    if (toggleBtn.classList.contains('copied') || toggleBtn.classList.contains('error')) return;
-                    const isHidden = copyOptions.hidden;
-                    const closeMenu = () => {
-                        const submenuContainer = copyOptions.querySelector('.submenu-open');
-                        if (submenuContainer) {
-                            submenuContainer.classList.remove('submenu-open');
-                            submenuContainer.querySelector('[aria-haspopup]').setAttribute('aria-expanded', 'false');
-                        }
-                        copyOptions.hidden = true;
-                        toggleBtn.classList.remove('dropdown-open');
-                        document.removeEventListener('click', handleOutsideClick);
-                        copyOptions.removeEventListener('keydown', handleCopyOptionsKeydown);
-                    };
-                    const handleOutsideClick = (event) => {
-                        if (!toggleBtn.parentElement.contains(event.target)) closeMenu();
-                    };
-                    if (isHidden) {
-                        copyOptions.hidden = false;
-                        toggleBtn.classList.add('dropdown-open');
-                        copyOptions.addEventListener('keydown', handleCopyOptionsKeydown);
-                        setTimeout(() => document.addEventListener('click', handleOutsideClick), 0);
-                    } else {
-                        closeMenu();
+                if (copyBtn) {
+                    if (copyBtn.closest('#download-options')) {
+                        e.stopPropagation();
                     }
+                    handleCopyClick(copyBtn, copyBtn.dataset.copyText);
+                    return;
+                }
+                const copyAllToggleBtn = target.closest('#copy-all-toggle-btn');
+                if (copyAllToggleBtn) {
+                    handleDropdown(copyAllToggleBtn, document.getElementById('copy-options'));
+                    return;
+                }
+                const downloadToggleBtn = target.closest('#download-toggle-btn');
+                if (downloadToggleBtn) {
+                    handleDropdown(downloadToggleBtn, document.getElementById('download-options'));
                     return;
                 }
                 const copyOptionBtn = target.closest('.copy-option');
@@ -1190,9 +1454,10 @@
                         textToCopy = episodes.map(e => `E${String(e.episode_number).padStart(2, '0')} - ${e.name}.${extension}`).join('\n');
                     }
                     if (textToCopy) {
+                        const copyAllBtn = document.getElementById('copy-all-toggle-btn');
                         document.getElementById('copy-options').hidden = true;
-                        document.getElementById('copy-all-toggle-btn').classList.remove('dropdown-open');
-                        handleCopyClick(document.getElementById('copy-all-toggle-btn'), textToCopy);
+                        copyAllBtn.classList.remove('dropdown-open');
+                        handleCopyClick(copyAllBtn, textToCopy);
                     }
                 }
             });
@@ -1210,7 +1475,7 @@
             };
             const resetApp = () => {
                 clearSearchInput();
-                detailsSection.innerHTML = `<div class="empty-state" id="welcome-message"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9A2.25 2.25 0 004.5 18.75z" /></svg><p style="font-weight: 600;">Ready to Organize Your Media Collection?</p><p style="font-size: 0.875rem; color: var(--secondary-text); margin-top: 0.25rem;">Start by Searching for a Movie or TV Show.</p></div>`;
+                detailsSection.innerHTML = '';
             };
             clearSearchBtn.addEventListener('click', clearSearchInput);
             titleButton.addEventListener('click', resetApp);
@@ -1230,8 +1495,38 @@
                     setTimeout(() => searchInput.classList.remove('search-focus-flash'), 500);
                 }
                 if (e.key === 'Escape') {
-                    if (trailerModal.classList.contains('visible')) closeTrailerModal();
-                    if (posterModal.classList.contains('visible')) closePosterModal();
+                    if (trailerModal.classList.contains('visible')) {
+                        closeTrailerModal();
+                        return;
+                    }
+                    if (posterModal.classList.contains('visible')) {
+                        closePosterModal();
+                        return;
+                    }
+                    const downloadOptions = document.getElementById('download-options');
+                    if (downloadOptions && !downloadOptions.hidden) {
+                        const btn = document.getElementById('download-toggle-btn');
+                        downloadOptions.hidden = true;
+                        btn.classList.remove('dropdown-open');
+                        btn.focus();
+                        return;
+                    }
+                    const copyOptions = document.getElementById('copy-options');
+                    if (copyOptions && !copyOptions.hidden) {
+                        const btn = document.getElementById('copy-all-toggle-btn');
+                        const openSubmenu = copyOptions.querySelector('.submenu-open');
+                        if (openSubmenu) {
+                            openSubmenu.classList.remove('submenu-open');
+                            openSubmenu.querySelector('[aria-haspopup]').setAttribute('aria-expanded', 'false');
+                        }
+                        copyOptions.hidden = true;
+                        btn.classList.remove('dropdown-open');
+                        btn.focus();
+                        return;
+                    }
+                    if (!searchResults.hidden) {
+                        clearSearchResults();
+                    }
                 }
             });
             searchInput.focus();
