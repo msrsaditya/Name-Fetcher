@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Copy original episode and movie names with formatting for use in local personal media libraries">
+    <meta name="theme-color" content="#030712">
     <title>The Media Library</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
     <style>
         :root {
             --bg-color: #030712;
             --primary-text: #f9fafb;
-            --secondary-text: #9ca3af;
-            --tertiary-text: #4b5563;
+            --secondary-text: #d1d5db;
+            --tertiary-text: #6b7280;
             --panel-bg: #111827;
             --panel-hover: #1f2937;
             --border-color: #374151;
@@ -35,6 +37,23 @@
             background-color: var(--bg-color);
             color: var(--primary-text);
             line-height: 1.6;
+        }
+        .skip-link {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 16px;
+            z-index: 100;
+            transform: translateY(-100%);
+            transition: transform 0.3s;
+            border-bottom-right-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .skip-link:focus {
+            transform: translateY(0);
         }
         .container {
             width: 100%;
@@ -577,6 +596,120 @@
             margin-top: 0;
             margin-right: 0;
         }
+        @keyframes skeleton-pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        .skeleton-loader {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+        .skeleton-poster {
+            width: 150px;
+            height: 225px;
+            background-color: var(--panel-hover);
+            border-radius: 0.5rem;
+            flex-shrink: 0;
+            animation: skeleton-pulse 1.5s ease-in-out infinite;
+        }
+        .skeleton-info {
+            flex-grow: 1;
+        }
+        .skeleton-text {
+            height: 1.25rem;
+            background-color: var(--panel-hover);
+            border-radius: 0.25rem;
+            margin-bottom: 0.75rem;
+            animation: skeleton-pulse 1.5s ease-in-out infinite;
+        }
+        .skeleton-text.short {
+            width: 40%;
+        }
+        .skeleton-text.long {
+            width: 100%;
+        }
+        .skeleton-overview {
+            margin-top: 1.5rem;
+        }
+        .skeleton-overview .skeleton-text {
+            height: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+        #keyboard-shortcuts-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+        .shortcuts-content {
+            background-color: var(--panel-bg);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            max-width: 90%;
+            width: 400px;
+            position: relative;
+        }
+        .shortcuts-content h3 {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .shortcuts-content ul {
+            list-style: none;
+        }
+        .shortcuts-content li {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .shortcuts-content li:last-child {
+            border-bottom: none;
+        }
+        .shortcuts-content kbd {
+            font-family: "SF Mono", "Consolas", "Roboto Mono", "Fira Code", monospace;
+            background-color: var(--panel-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+         .recent-searches h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--secondary-text);
+        }
+        .recent-items-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .recent-item {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--primary-text);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 150ms, border-color 150ms;
+        }
+        .recent-item:hover {
+            background-color: var(--panel-hover);
+            border-color: var(--accent-color);
+        }
         [hidden] {
             display: none !important;
         }
@@ -649,10 +782,16 @@
             visibility: visible;
         }
         .trailer-container,
-        .poster-modal-content {
+        .poster-modal-content,
+        .shortcuts-content {
             position: relative;
             transform: scale(0.95);
             transition: transform 200ms ease;
+        }
+        #trailer-modal.visible .trailer-container,
+        #poster-modal.visible .poster-modal-content,
+        #keyboard-shortcuts-modal:not([hidden]) .shortcuts-content {
+            transform: scale(1);
         }
         .trailer-container {
             width: 90%;
@@ -662,10 +801,6 @@
         .poster-modal-content {
             max-width: 90vw;
             max-height: 90vh;
-        }
-        #trailer-modal.visible .trailer-container,
-        #poster-modal.visible .poster-modal-content {
-            transform: scale(1);
         }
         .trailer-container iframe {
             width: 100%;
@@ -724,6 +859,16 @@
         #toast-notification.visible {
             transform: translate(-50%, 0);
         }
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
         @media (max-width: 640px) {
             .container {
                 padding: 1.5rem 0.75rem;
@@ -761,6 +906,7 @@
     </style>
 </head>
 <body>
+    <a href="#mainContent" class="skip-link">Skip to main content</a>
     <div class="container">
         <header>
             <button type="button" id="title-button" class="title-button">The Media Library</button>
@@ -806,6 +952,23 @@
         </div>
     </div>
     <div id="toast-notification"></div>
+    <div id="keyboard-shortcuts-modal" hidden role="dialog" aria-labelledby="shortcuts-title">
+        <div class="shortcuts-content">
+            <button id="close-shortcuts-btn" class="clear-search-btn" style="position: absolute; top: 0.5rem; right: 0.5rem;" aria-label="Close shortcuts help">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h3 id="shortcuts-title">Keyboard Shortcuts</h3>
+            <ul>
+                <li><span>Focus search</span><kbd>Ctrl/Cmd + K</kbd></li>
+                <li><span>Close modals/dropdowns</span><kbd>Esc</kbd></li>
+                <li><span>Navigate results</span><kbd>↑/↓</kbd></li>
+                <li><span>Select result</span><kbd>Enter</kbd></li>
+                <li><span>Show this help</span><kbd>?</kbd></li>
+            </ul>
+        </div>
+    </div>
     <script>
         (() => {
             const CONFIG = {
@@ -825,219 +988,410 @@
                     names: 'names',
                     rename: 'rename'
                 },
-                placeholderImg: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 3' fill='%231f2937'%3E%3Crect width='2' height='3'/%3E%3C/svg%3E"
+                placeholderImg: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 3' fill='%231f2937'%3E%3Crect width='2' height='3'/%3E%3C/svg%3E",
+                cacheDuration: 5 * 60 * 1000,
             };
-            const searchInput = document.getElementById('searchInput');
-            const searchResults = document.getElementById('searchResults');
-            const detailsSection = document.getElementById('detailsSection');
-            const mainLoader = document.getElementById('main-loader');
-            const titleButton = document.getElementById('title-button');
-            const announcer = document.getElementById('a11y-announcer');
-            const clearSearchBtn = document.getElementById('clearSearchBtn');
-            const trailerModal = document.getElementById('trailer-modal');
-            const trailerIframe = document.getElementById('trailer-iframe');
-            const posterModal = document.getElementById('poster-modal');
-            const fullPosterImg = document.getElementById('full-poster-img');
-            const toastNotification = document.getElementById('toast-notification');
-            const state = {
+            const DOM = {
+                searchInput: document.getElementById('searchInput'),
+                searchResults: document.getElementById('searchResults'),
+                detailsSection: document.getElementById('detailsSection'),
+                mainLoader: document.getElementById('main-loader'),
+                titleButton: document.getElementById('title-button'),
+                announcer: document.getElementById('a11y-announcer'),
+                clearSearchBtn: document.getElementById('clearSearchBtn'),
+                trailerModal: document.getElementById('trailer-modal'),
+                trailerIframe: document.getElementById('trailer-iframe'),
+                closeTrailerBtn: document.getElementById('close-trailer-btn'),
+                posterModal: document.getElementById('poster-modal'),
+                fullPosterImg: document.getElementById('full-poster-img'),
+                closePosterBtn: document.getElementById('close-poster-btn'),
+                toastNotification: document.getElementById('toast-notification'),
+                shortcutsModal: document.getElementById('keyboard-shortcuts-modal'),
+                closeShortcutsBtn: document.getElementById('close-shortcuts-btn'),
+            };
+            const State = {
                 debounceTimer: null,
                 currentKeyboardFocus: -1,
-                toastTimer: null
-            };
-            let searchResultNodes = [];
-            const copyIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25H9.75A2.25 2.25 0 017.5 4.5v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>`;
-            const checkIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>`;
-            const errorIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
-            const playIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.647c1.295.748 1.295 2.539 0 3.286L7.279 20.99c-1.25.72-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" /></svg>`;
-            const fetchData = async (url) => {
-                mainLoader.hidden = false;
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(`API Error: ${response.status} ${response.statusText}`);
-                    return await response.json();
-                } catch (error) {
-                    console.error("Fetch failed:", error);
-                    return {
-                        error: "Failed to fetch data. Please check your connection or try again later."
-                    };
-                } finally {
-                    mainLoader.hidden = true;
-                }
-            };
-            const clearAndDisplayError = (container, message) => {
-                container.innerHTML = `<div class="error-message">${message}</div>`;
-            };
-            const searchMedia = (query) => {
-                if (!query) return clearSearchResults();
-                const url = `https://api.themoviedb.org/3/search/multi?api_key=${CONFIG.apiKey}&language=en-US&query=${encodeURIComponent(query)}`;
-                fetchData(url).then(data => {
-                    if (data.error) return clearAndDisplayError(searchResults, data.error);
-                    if (data && data.results) displaySearchResults(data.results);
-                });
-            };
-            const getMediaDetails = async (id, type) => {
-                clearSearchResults();
-                detailsSection.innerHTML = `<div class="episode-loader" style="padding: 4rem 0;"><div class="loader"></div></div>`;
-                const detailsUrl = `https://api.themoviedb.org/3/${type}/${id}?api_key=${CONFIG.apiKey}&language=en-US`;
-                const creditsUrl = `https://api.themoviedb.org/3/${type}/${id}/credits?api_key=${CONFIG.apiKey}&language=en-US`;
-                const [details, credits] = await Promise.all([
-                    fetchData(detailsUrl),
-                    fetchData(creditsUrl)
-                ]);
-                if (details.error || credits.error) {
-                    return clearAndDisplayError(detailsSection, details.error || credits.error);
-                }
-                if (details) {
-                    if (type === CONFIG.mediaTypes.movie) {
-                        displayMovieDetails(details, credits);
-                        detailsSection.querySelector('.copy-btn')?.focus();
-                    } else {
-                        displayTvShowDetails(details, credits);
-                        detailsSection.querySelector('#season-select')?.focus();
+                toastTimer: null,
+                currentMedia: null,
+                searchHistory: [],
+                searchResultNodes: [],
+                fetchController: null,
+                setCurrentMedia(media) {
+                    this.currentMedia = media;
+                    this.addToHistory(media);
+                },
+                addToHistory(media) {
+                    this.searchHistory = this.searchHistory.filter(item => item.id !== media.id);
+                    this.searchHistory.unshift(media);
+                    if (this.searchHistory.length > 10) {
+                        this.searchHistory.pop();
                     }
                 }
             };
-            const getSeasonDetails = (tvId, seasonNumber) => {
-                const url = `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${CONFIG.apiKey}&language=en-US`;
-                const episodeListContainer = document.querySelector('.episode-list');
-                const copyAllBtn = document.getElementById('copy-all-toggle-btn');
-                const seasonSelect = document.getElementById('season-select');
-                if (episodeListContainer) episodeListContainer.innerHTML = `<div class="episode-loader"><div class="loader"></div></div>`;
-                if (copyAllBtn) copyAllBtn.disabled = true;
-                fetchData(url).then(data => {
-                    if (data.error) return clearAndDisplayError(episodeListContainer, data.error);
-                    if (data && data.episodes && episodeListContainer) {
-                        displayEpisodes(data.episodes);
-                        updateCopyAllData(data.episodes);
+            const Cache = {
+                data: new Map(),
+                maxSize: 50,
+                get(key) {
+                    const cached = this.data.get(key);
+                    if (cached && Date.now() - cached.timestamp < CONFIG.cacheDuration) {
+                        return cached.data;
+                    }
+                    this.data.delete(key);
+                    return null;
+                },
+                set(key, data) {
+                    if (this.data.size >= this.maxSize) {
+                        const firstKey = this.data.keys().next().value;
+                        this.data.delete(firstKey);
+                    }
+                    this.data.set(key, {
+                        data,
+                        timestamp: Date.now()
+                    });
+                },
+            };
+            const Analytics = {
+                trackEvent(category, action, label) {
+                    console.log('Event Tracked:', {
+                        category,
+                        action,
+                        label
+                    });
+                },
+                trackError(error, context = 'global') {
+                    console.error(`Error [${context}]:`, error);
+                }
+            };
+            const API = {
+                async fetchData(url, signal) {
+                    DOM.mainLoader.hidden = false;
+                    try {
+                        const response = await fetch(url, { signal });
+                        if (!response.ok) {
+                            if (response.status === 429) throw new Error('Rate limit exceeded. Please wait a moment.');
+                            if (response.status === 404) throw new Error('The requested content could not be found.');
+                            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                        }
+                        return await response.json();
+                    } catch (error) {
+                        if (error.name === 'AbortError') {
+                            console.log('Fetch aborted');
+                            return { aborted: true };
+                        }
+                        Analytics.trackError(error, 'fetch');
+                        if (error.message.includes('Failed to fetch')) {
+                            return {
+                                error: "Network error. Please check your connection and try again."
+                            };
+                        }
+                        return {
+                            error: error.message
+                        };
+                    } finally {
+                        DOM.mainLoader.hidden = true;
+                    }
+                },
+                async fetchWithCache(url, signal) {
+                    const cached = Cache.get(url);
+                    if (cached) return cached;
+                    const data = await this.fetchData(url, signal);
+                     if (data.aborted) return data;
+                    if (!data.error) {
+                        Cache.set(url, data);
+                    }
+                    return data;
+                },
+                async search(query) {
+                    if (State.fetchController) {
+                        State.fetchController.abort();
+                    }
+                    State.fetchController = new AbortController();
+                    
+                    if (!query) {
+                        UI.clearSearchResults();
+                        return;
+                    }
+                    DOM.searchResults.innerHTML = `
+                    <div style="display: flex; justify-content: center; padding: 2rem;">
+                        <div class="loader"></div>
+                    </div>
+                `;
+                    DOM.searchResults.hidden = false;
+                    Analytics.trackEvent('search', 'query', query);
+                    const url = `https://api.themoviedb.org/3/search/multi?api_key=${CONFIG.apiKey}&language=en-US&query=${encodeURIComponent(query)}`;
+                    const data = await this.fetchData(url, State.fetchController.signal);
+                    
+                    if (data.aborted) return;
+
+                    if (data.error) {
+                        UI.clearAndDisplayError(DOM.searchResults, data.error);
+                    } else if (data && data.results) {
+                        UI.displaySearchResults(data.results);
+                    }
+                },
+                async getDetails(id, type) {
+                    if (State.fetchController) {
+                        State.fetchController.abort();
+                    }
+                    State.fetchController = new AbortController();
+                    const signal = State.fetchController.signal;
+
+                    UI.clearSearchResults();
+                    UI.displaySkeletonLoader();
+                    const detailsUrl = `https://api.themoviedb.org/3/${type}/${id}?api_key=${CONFIG.apiKey}&language=en-US`;
+                    const creditsUrl = `https://api.themoviedb.org/3/${type}/${id}/credits?api_key=${CONFIG.apiKey}&language=en-US`;
+                    
+                    const [details, credits] = await Promise.all([
+                        this.fetchWithCache(detailsUrl, signal),
+                        this.fetchWithCache(creditsUrl, signal)
+                    ]);
+                    
+                    if (details.aborted || credits.aborted) return;
+
+                    if (details.error || credits.error) {
+                        return UI.clearAndDisplayError(DOM.detailsSection, details.error || credits.error);
+                    }
+                    if (details) {
+                        State.setCurrentMedia({
+                            id,
+                            type,
+                            title: details.title || details.name
+                        });
+                        URLManager.update(type, id, details.title || details.name);
+                        if (type === CONFIG.mediaTypes.movie) {
+                            UI.displayMovieDetails(details, credits);
+                        } else {
+                            UI.displayTvShowDetails(details, credits);
+                        }
+                        UI.observeImages();
+                        requestAnimationFrame(() => {
+                            if (type === CONFIG.mediaTypes.movie) {
+                                DOM.detailsSection.querySelector('.copy-btn')?.focus();
+                            } else {
+                                document.getElementById('season-select')?.focus();
+                            }
+                        });
+                    }
+                },
+                async getSeasonDetails(tvId, seasonNumber) {
+                     if (State.fetchController) {
+                        State.fetchController.abort();
+                    }
+                    State.fetchController = new AbortController();
+                    const signal = State.fetchController.signal;
+
+                    const episodeListContainer = document.querySelector('.episode-list');
+                    const copyAllBtn = document.getElementById('copy-all-toggle-btn');
+                    if (episodeListContainer) episodeListContainer.innerHTML = `<div class="episode-loader"><div class="loader"></div></div>`;
+                    if (copyAllBtn) copyAllBtn.disabled = true;
+                    
+                    const url = `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?api_key=${CONFIG.apiKey}&language=en-US`;
+                    const data = await this.fetchWithCache(url, signal);
+
+                    if (data.aborted) return;
+
+                    if (data.error) {
+                        UI.clearAndDisplayError(episodeListContainer, data.error);
+                    } else if (data && data.episodes && episodeListContainer) {
+                        UI.displayEpisodes(data.episodes);
+                        UI.updateCopyAllData(data.episodes);
+                        const seasonSelect = document.getElementById('season-select');
                         const selectedSeasonName = seasonSelect.options[seasonSelect.selectedIndex].text;
-                        announcer.textContent = `Loaded ${data.episodes.length} episodes for ${selectedSeasonName}.`;
+                        UI.updateAriaLive(`Loaded ${data.episodes.length} episodes for ${selectedSeasonName}.`);
                     }
-                });
-            };
-            const sanitizeText = (text) => {
-                const temp = document.createElement('div');
-                temp.textContent = text || '';
-                return temp.innerHTML;
-            };
-            const closeSearchOnClickOutside = (e) => {
-                if (!searchResults.hidden && !searchResults.contains(e.target) && e.target !== searchInput) {
-                    clearSearchResults();
+                },
+                async getTrailer(mediaId, mediaType) {
+                    const url = `https://api.themoviedb.org/3/${mediaType}/${mediaId}/videos?api_key=${CONFIG.apiKey}&language=en-US`;
+                    const data = await this.fetchWithCache(url);
+                    if (data.error || !data.results || data.results.length === 0) {
+                        UI.showToast('No trailer found.');
+                        return;
+                    }
+                    const trailer = data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube') ||
+                        data.results.find(v => v.type === 'Teaser' && v.site === 'YouTube') ||
+                        data.results.find(v => v.site === 'YouTube');
+                    if (trailer) {
+                        UI.openTrailerModal(trailer.key);
+                    } else {
+                        UI.showToast('No trailer found.');
+                    }
                 }
             };
-            const clearSearchResults = () => {
-                searchResults.innerHTML = '';
-                searchResults.hidden = true;
-                state.currentKeyboardFocus = -1;
-                searchResultNodes = [];
-                searchInput.removeAttribute('aria-activedescendant');
-                document.removeEventListener('click', closeSearchOnClickOutside);
-            };
-            const createPosterHTML = (posterPath, altText, size = 'thumbnail') => {
-                const posterUrl = posterPath ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes[size]}${posterPath}` : CONFIG.placeholderImg;
-                return `
+            const UI = {
+                copyIconSVG: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a2.25 2.25 0 01-2.25 2.25H9.75A2.25 2.25 0 017.5 4.5v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" /></svg>`,
+                checkIconSVG: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>`,
+                errorIconSVG: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`,
+                playIconSVG: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.647c1.295.748 1.295 2.539 0 3.286L7.279 20.99c-1.25.72-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" /></svg>`,
+                imageObserver: new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.src = img.dataset.src;
+                            img.removeAttribute('data-src');
+                            observer.unobserve(img);
+                        }
+                    });
+                }),
+                observeImages() {
+                    document.querySelectorAll('.poster-image[data-src]').forEach(img => this.imageObserver.observe(img));
+                },
+                sanitizeText(text) {
+                    const temp = document.createElement('div');
+                    temp.textContent = text || '';
+                    return temp.innerHTML;
+                },
+                clearAndDisplayError(container, message) {
+                    if (container) container.innerHTML = `<div class="error-message">${message}</div>`;
+                },
+                clearSearchResults() {
+                    DOM.searchResults.innerHTML = '';
+                    DOM.searchResults.hidden = true;
+                    State.currentKeyboardFocus = -1;
+                    State.searchResultNodes = [];
+                    DOM.searchInput.removeAttribute('aria-activedescendant');
+                    document.removeEventListener('click', App.closeSearchOnClickOutside);
+                },
+                updateAriaLive(message, priority = 'polite') {
+                    DOM.announcer.setAttribute('aria-live', priority);
+                    DOM.announcer.textContent = message;
+                },
+                createPosterHTML(posterPath, altText, size = 'thumbnail') {
+                    const posterUrl = posterPath ? `${CONFIG.imgBaseUrl}${CONFIG.imageSizes[size]}${posterPath}` : CONFIG.placeholderImg;
+                     const placeholder = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 3' fill='#1f2937'><rect width='2' height='3'/><text x='1' y='1.7' font-size='0.8' text-anchor='middle' fill='#6b7280'>🎬</text></svg>`)}`;
+                    return `
                     <div class="poster-container">
-                        <img class="poster-image" data-poster-path="${posterPath}" src="${posterUrl}" alt="${altText}" loading="lazy" onerror="this.onerror=null;this.src='${CONFIG.placeholderImg}';">
+                        <img class="poster-image" data-src="${posterUrl}" data-poster-path="${posterPath || ''}" src="${posterPath ? CONFIG.placeholderImg : placeholder}" alt="${altText}" onerror="this.onerror=null;this.src='${placeholder}';">
                         <div class="play-overlay">
-                            <button type="button" class="play-trailer-btn" aria-label="Watch trailer for ${altText}">${playIconSVG}</button>
+                            <button type="button" class="play-trailer-btn" aria-label="Watch trailer for ${altText}">${this.playIconSVG}</button>
                         </div>
                     </div>`;
-            };
-            const displaySearchResults = (results) => {
-                clearSearchResults();
-                const filteredResults = results.filter(r => r.media_type === CONFIG.mediaTypes.movie || r.media_type === CONFIG.mediaTypes.tv);
-                if (filteredResults.length === 0) {
-                    searchResults.innerHTML = `<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg><p style="font-weight: 600;">No results found</p><p style="font-size: 0.875rem; color: var(--tertiary-text); margin-top: 0.25rem;">We couldn't find anything for your search.</p></div>`;
-                    announcer.textContent = 'No results found.';
-                } else {
-                    const fragment = document.createDocumentFragment();
-                    filteredResults.forEach((result, index) => {
-                        const item = document.createElement('div');
-                        item.className = 'search-result-item';
-                        item.dataset.id = result.id;
-                        item.dataset.type = result.media_type;
-                        item.id = `result-option-${index}`;
-                        item.setAttribute('role', 'option');
-                        const year = result.release_date?.split('-')[0] || result.first_air_date?.split('-')[0] || 'N/A';
-                        const title = result.title || result.name;
-                        const sanitizedTitle = sanitizeText(title);
-                        item.innerHTML = `
-                            ${createPosterHTML(result.poster_path, `Poster for ${sanitizedTitle}`)}
+                },
+                displaySearchResults(results) {
+                    const filteredResults = results.filter(r => r.media_type === CONFIG.mediaTypes.movie || r.media_type === CONFIG.mediaTypes.tv);
+                    if (filteredResults.length === 0) {
+                        DOM.searchResults.innerHTML = `<div class="empty-state"><p style="font-weight: 600;">No results found</p><p style="font-size: 0.875rem; color: var(--tertiary-text); margin-top: 0.25rem;">We couldn't find anything for your search.</p></div>`;
+                        this.updateAriaLive('No results found.');
+                    } else {
+                        const fragment = document.createDocumentFragment();
+                        filteredResults.forEach((result, index) => {
+                            const item = document.createElement('div');
+                            item.className = 'search-result-item';
+                            item.dataset.id = result.id;
+                            item.dataset.type = result.media_type;
+                            item.id = `result-option-${index}`;
+                            item.setAttribute('role', 'option');
+                            const year = result.release_date?.split('-')[0] || result.first_air_date?.split('-')[0] || 'N/A';
+                            const title = result.title || result.name;
+                            const sanitizedTitle = this.sanitizeText(title);
+                            item.innerHTML = `
+                            ${this.createPosterHTML(result.poster_path, `Poster for ${sanitizedTitle}`)}
                             <div class="info">
                                 <p class="title">${sanitizedTitle}</p>
                                 <p class="meta">${year} &bull; ${result.media_type.toUpperCase()}</p>
                             </div>`;
-                        fragment.appendChild(item);
-                    });
-                    searchResults.appendChild(fragment);
-                    searchResultNodes = searchResults.querySelectorAll('.search-result-item');
-                    announcer.textContent = `${filteredResults.length} results found. Use arrow keys to navigate.`;
-                    document.addEventListener('click', closeSearchOnClickOutside);
-                }
-                searchResults.hidden = false;
-            };
-            const createNameBlock = (name) => `<div class="name-block"><div class="name-line"><pre>${sanitizeText(name)}</pre><button class="copy-btn" data-copy-text="${sanitizeText(name)}" aria-label="Copy title">${copyIconSVG}</button></div></div>`;
-            const createAboutDetail = (label, value) => value ? `<div><strong>${label}</strong><span>${value}</span></div>` : '';
-            const displayMovieDetails = (movie, credits) => {
-                const title = movie.title || movie.original_title;
-                const sanitizedTitle = sanitizeText(title);
-                const posterHTML = createPosterHTML(movie.poster_path, `Poster for ${sanitizedTitle}`, 'poster');
-                const releaseDate = movie.release_date ? new Date(movie.release_date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                }) : 'N/A';
-                const language = movie.original_language ? new Intl.DisplayNames(['en'], {
-                    type: 'language'
-                }).of(movie.original_language) : 'N/A';
-                const rating = movie.vote_count > 0 ? `${movie.vote_average.toFixed(1)} / 10 (${movie.vote_count.toLocaleString()} votes)` : 'N/A';
-                const genres = movie.genres.map(g => g.name).join(', ');
-                const cast = credits.cast.slice(0, 6).map(c => c.name).join(', ');
-                detailsSection.innerHTML = `
+                            fragment.appendChild(item);
+                        });
+                        DOM.searchResults.innerHTML = '';
+                        DOM.searchResults.appendChild(fragment);
+                        State.searchResultNodes = DOM.searchResults.querySelectorAll('.search-result-item');
+                        this.updateAriaLive(`${filteredResults.length} results found. Use arrow keys to navigate.`);
+                        document.addEventListener('click', App.closeSearchOnClickOutside);
+                    }
+                    DOM.searchResults.hidden = false;
+                    this.observeImages();
+                },
+                displaySkeletonLoader() {
+                    DOM.detailsSection.innerHTML = `
+                    <div class="skeleton-loader">
+                        <div class="skeleton-poster"></div>
+                        <div class="skeleton-info">
+                            <div class="skeleton-text long"></div>
+                            <div class="skeleton-text short"></div>
+                            <div class="skeleton-overview">
+                                <div class="skeleton-text"></div>
+                                <div class="skeleton-text"></div>
+                                <div class="skeleton-text short"></div>
+                            </div>
+                        </div>
+                    </div>`;
+                },
+                displayRecentSearches() {
+                    if (State.searchHistory.length === 0) return;
+                    const itemsHTML = State.searchHistory.map(item =>
+                        `<button class="recent-item" data-id="${item.id}" data-type="${item.type}">${this.sanitizeText(item.title)}</button>`
+                    ).join('');
+
+                    DOM.detailsSection.innerHTML = `
+                        <div class="recent-searches">
+                            <h2>Recent Searches</h2>
+                            <div class="recent-items-grid">${itemsHTML}</div>
+                        </div>
+                    `;
+                },
+                createNameBlock: (name) => `<div class="name-block"><div class="name-line"><pre>${UI.sanitizeText(name)}</pre><button class="copy-btn" data-copy-text="${UI.sanitizeText(name)}" aria-label="Copy title">${UI.copyIconSVG}</button></div></div>`,
+                createAboutDetail: (label, value) => value ? `<div><strong>${label}</strong><span>${value}</span></div>` : '',
+                displayMovieDetails(movie, credits) {
+                    const title = movie.title || movie.original_title;
+                    const posterHTML = this.createPosterHTML(movie.poster_path, `Poster for ${this.sanitizeText(title)}`, 'poster');
+                    const releaseDate = movie.release_date ? new Date(movie.release_date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    }) : 'N/A';
+                    const language = movie.original_language ? new Intl.DisplayNames(['en'], {
+                        type: 'language'
+                    }).of(movie.original_language) : 'N/A';
+                    const rating = movie.vote_count > 0 ? `${movie.vote_average.toFixed(1)} / 10 (${movie.vote_count.toLocaleString()} votes)` : 'N/A';
+                    const genres = movie.genres.map(g => g.name).join(', ');
+                    const cast = credits.cast.slice(0, 6).map(c => c.name).join(', ');
+                    const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : 'N/A';
+                    DOM.detailsSection.innerHTML = `
                     <div class="details-header" data-id="${movie.id}" data-type="movie">
                         ${posterHTML}
                         <div class="details-info">
-                            ${createNameBlock(title)}
-                            ${movie.overview ? `<p class="details-overview">${sanitizeText(movie.overview)}</p>` : ''}
+                            ${this.createNameBlock(title)}
+                            ${movie.overview ? `<p class="details-overview">${this.sanitizeText(movie.overview)}</p>` : ''}
                         </div>
                     </div>
                     <div class="about-section">
                         <h2>About the Movie</h2>
                         <div class="about-grid">
-                            ${createAboutDetail('Status', movie.status)}
-                            ${createAboutDetail('Release Date', releaseDate)}
-                            ${createAboutDetail('Genre', genres)}
-                            ${createAboutDetail('Language', language)}
-                            ${createAboutDetail('Rating', rating)}
-                            ${createAboutDetail('Cast', cast)}
+                            ${this.createAboutDetail('Status', movie.status)}
+                            ${this.createAboutDetail('Release Date', releaseDate)}
+                            ${this.createAboutDetail('Genre', genres)}
+                            ${this.createAboutDetail('Runtime', runtime)}
+                            ${this.createAboutDetail('Language', language)}
+                            ${this.createAboutDetail('Rating', rating)}
+                            ${this.createAboutDetail('Cast', cast)}
                         </div>
                     </div>
                 `;
-                appendDownloadSection(movie, CONFIG.mediaTypes.movie);
-            };
-            const displayTvShowDetails = (tvShow, credits) => {
-                const title = tvShow.name || tvShow.original_name;
-                const sanitizedTitle = sanitizeText(title);
-                const posterHTML = createPosterHTML(tvShow.poster_path, `Poster for ${sanitizedTitle}`, 'poster');
-                const firstAirDate = tvShow.first_air_date ? new Date(tvShow.first_air_date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                }) : 'N/A';
-                const language = tvShow.original_language ? new Intl.DisplayNames(['en'], {
-                    type: 'language'
-                }).of(tvShow.original_language) : 'N/A';
-                const rating = tvShow.vote_count > 0 ? `${tvShow.vote_average.toFixed(1)} / 10 (${tvShow.vote_count.toLocaleString()} votes)` : 'N/A';
-                const genres = tvShow.genres.map(g => g.name).join(', ');
-                const cast = credits.cast.slice(0, 6).map(c => c.name).join(', ');
-                const createdBy = tvShow.created_by.map(c => c.name).join(', ');
-                const sortedSeasons = tvShow.seasons.sort((a, b) => a.season_number - b.season_number);
-                const seasonOptions = sortedSeasons.map(season => `<option value="${season.season_number}">${sanitizeText(season.name)}</option>`).join('');
-                detailsSection.innerHTML = `
+                    this.appendDownloadSection(movie, CONFIG.mediaTypes.movie);
+                },
+                displayTvShowDetails(tvShow, credits) {
+                    const title = tvShow.name || tvShow.original_name;
+                    const posterHTML = this.createPosterHTML(tvShow.poster_path, `Poster for ${this.sanitizeText(title)}`, 'poster');
+                    const firstAirDate = tvShow.first_air_date ? new Date(tvShow.first_air_date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    }) : 'N/A';
+                    const language = tvShow.original_language ? new Intl.DisplayNames(['en'], {
+                        type: 'language'
+                    }).of(tvShow.original_language) : 'N/A';
+                    const rating = tvShow.vote_count > 0 ? `${tvShow.vote_average.toFixed(1)} / 10 (${tvShow.vote_count.toLocaleString()} votes)` : 'N/A';
+                    const genres = tvShow.genres.map(g => g.name).join(', ');
+                    const cast = credits.cast.slice(0, 6).map(c => c.name).join(', ');
+                    const createdBy = tvShow.created_by.map(c => c.name).join(', ');
+                    const sortedSeasons = tvShow.seasons.sort((a, b) => a.season_number - b.season_number);
+                    const seasonOptions = sortedSeasons.map(season => `<option value="${season.season_number}">${this.sanitizeText(season.name)}</option>`).join('');
+                    DOM.detailsSection.innerHTML = `
                     <div class="details-header" data-id="${tvShow.id}" data-type="tv">
                         ${posterHTML}
                         <div class="details-info">
-                            ${createNameBlock(title)}
-                             ${tvShow.overview ? `<p class="details-overview">${sanitizeText(tvShow.overview)}</p>` : ''}
+                            ${this.createNameBlock(title)}
+                             ${tvShow.overview ? `<p class="details-overview">${this.sanitizeText(tvShow.overview)}</p>` : ''}
                         </div>
                     </div>
                     <div class="season-controls">
@@ -1070,51 +1424,51 @@
                     <div class="about-section">
                         <h2>About the Show</h2>
                         <div class="about-grid">
-                            ${createAboutDetail('Status', tvShow.status)}
-                            ${createAboutDetail('First Aired', firstAirDate)}
-                            ${createAboutDetail('Seasons', tvShow.number_of_seasons)}
-                            ${createAboutDetail('Episodes', tvShow.number_of_episodes)}
-                            ${createAboutDetail('Genre', genres)}
-                            ${createAboutDetail('Language', language)}
-                            ${createAboutDetail('Rating', rating)}
-                            ${createAboutDetail('Cast', cast)}
-                            ${createAboutDetail('Created By', createdBy)}
+                            ${this.createAboutDetail('Status', tvShow.status)}
+                            ${this.createAboutDetail('First Aired', firstAirDate)}
+                            ${this.createAboutDetail('Seasons', tvShow.number_of_seasons)}
+                            ${this.createAboutDetail('Episodes', tvShow.number_of_episodes)}
+                            ${this.createAboutDetail('Genre', genres)}
+                            ${this.createAboutDetail('Language', language)}
+                            ${this.createAboutDetail('Rating', rating)}
+                            ${this.createAboutDetail('Cast', cast)}
+                            ${this.createAboutDetail('Created By', createdBy)}
                         </div>
                     </div>
                 `;
-                if (sortedSeasons.length > 0) getSeasonDetails(tvShow.id, sortedSeasons[0].season_number);
-                appendDownloadSection(tvShow, CONFIG.mediaTypes.tv);
-            };
-            const appendDownloadSection = (details, type) => {
-                const title = details.title || details.name;
-                const year = (details.release_date || details.first_air_date)?.split('-')[0];
-                if (!title || !year) return;
-                const query = `${title} ${year}`;
-                const queryEncoded = encodeURIComponent(query);
-                const queryPlus = query.replace(/ /g, '+');
-                const category1337x = type === 'movie' ? 'Movies' : 'TV';
-                const url1337x = `https://1337x.to/sort-category-search/${queryEncoded}/${category1337x}/size/desc/1/`;
-                const urlTpb = `https://thepiratebay.org/search.php?q=${queryPlus}&video=on&search=Pirate+Search&page=0&orderby=`;
-                const urlYts = `https://yts.mx/browse-movies/${queryEncoded}/all/all/0/latest/0/all`;
-                let optionsHTML = `
+                    if (sortedSeasons.length > 0) API.getSeasonDetails(tvShow.id, sortedSeasons[0].season_number);
+                    this.appendDownloadSection(tvShow, CONFIG.mediaTypes.tv);
+                },
+                appendDownloadSection(details, type) {
+                    const title = details.title || details.name;
+                    const year = (details.release_date || details.first_air_date)?.split('-')[0];
+                    if (!title || !year) return;
+                    const query = `${title} ${year}`;
+                    const queryEncoded = encodeURIComponent(query);
+                    const queryPlus = query.replace(/ /g, '+');
+                    const category1337x = type === 'movie' ? 'Movies' : 'TV';
+                    const url1337x = `https://1337x.to/sort-category-search/${queryEncoded}/${category1337x}/size/desc/1/`;
+                    const urlTpb = `https://thepiratebay.org/search.php?q=${queryPlus}&video=on&search=Pirate+Search&page=0&orderby=`;
+                    const urlYts = `https://yts.mx/browse-movies/${queryEncoded}/all/all/0/latest/0/all`;
+                    let optionsHTML = `
                     <div class="download-option">
                         <a href="${url1337x}" target="_blank" rel="noopener noreferrer">1337X</a>
-                        <button class="copy-btn" data-copy-text="${url1337x}" aria-label="Copy 1337X link">${copyIconSVG}</button>
+                        <button class="copy-btn" data-copy-text="${url1337x}" aria-label="Copy 1337X link">${this.copyIconSVG}</button>
                     </div>
                     <div class="download-option">
                         <a href="${urlTpb}" target="_blank" rel="noopener noreferrer">TPB</a>
-                        <button class="copy-btn" data-copy-text="${urlTpb}" aria-label="Copy TPB link">${copyIconSVG}</button>
+                        <button class="copy-btn" data-copy-text="${urlTpb}" aria-label="Copy TPB link">${this.copyIconSVG}</button>
                     </div>
                 `;
-                if (type === 'movie') {
-                    optionsHTML += `
+                    if (type === 'movie') {
+                        optionsHTML += `
                         <div class="download-option">
                             <a href="${urlYts}" target="_blank" rel="noopener noreferrer">YTS</a>
-                            <button class="copy-btn" data-copy-text="${urlYts}" aria-label="Copy YTS link">${copyIconSVG}</button>
+                            <button class="copy-btn" data-copy-text="${urlYts}" aria-label="Copy YTS link">${this.copyIconSVG}</button>
                         </div>
                     `;
-                }
-                const downloadSectionHTML = `
+                    }
+                    const downloadSectionHTML = `
                     <div id="download-section">
                         <button id="download-toggle-btn">
                             <span>Download</span>
@@ -1122,46 +1476,76 @@
                         </button>
                         <div id="download-options" hidden>${optionsHTML}</div>
                     </div>`;
-                detailsSection.insertAdjacentHTML('beforeend', downloadSectionHTML);
+                    DOM.detailsSection.insertAdjacentHTML('beforeend', downloadSectionHTML);
+                },
+                displayEpisodes(episodes) {
+                    const episodeListContainer = document.querySelector('.episode-list');
+                    if (!episodeListContainer) return;
+                    episodeListContainer.innerHTML = '';
+                    if (episodes.length === 0) {
+                        episodeListContainer.innerHTML = `<p style="color: var(--secondary-text); text-align: center; padding: 1rem;">No episode data available for this season.</p>`;
+                        return;
+                    }
+                    const fragment = document.createDocumentFragment();
+                    episodes.forEach(episode => {
+                        const item = document.createElement('div');
+                        item.className = 'episode-item';
+                        item.innerHTML = `<div class="episode-content"><p class="episode-meta">EPISODE ${episode.episode_number}</p><pre>${this.sanitizeText(episode.name)}</pre></div><button class="copy-btn" data-copy-text="${this.sanitizeText(episode.name)}" aria-label="Copy episode name">${this.copyIconSVG}</button>`;
+                        fragment.appendChild(item);
+                    });
+                    episodeListContainer.appendChild(fragment);
+                },
+                updateCopyAllData(episodes) {
+                    const copyAllBtn = document.getElementById('copy-all-toggle-btn');
+                    const copyContainer = document.querySelector('.copy-container');
+                    if (!copyAllBtn || !copyContainer || episodes.length === 0) return;
+                    const namesOnly = episodes.map(e => e.name).join('\n');
+                    const relevantEpisodeData = episodes.map(e => ({
+                        name: e.name,
+                        episode_number: e.episode_number
+                    }));
+                    copyContainer.dataset.episodesJson = JSON.stringify(relevantEpisodeData);
+                    copyContainer.dataset.copyNames = namesOnly;
+                    copyAllBtn.disabled = false;
+                },
+                showToast(message) {
+                    clearTimeout(State.toastTimer);
+                    DOM.toastNotification.textContent = message;
+                    DOM.toastNotification.classList.add('visible');
+                    State.toastTimer = setTimeout(() => {
+                        DOM.toastNotification.classList.remove('visible');
+                    }, 3000);
+                },
+                openTrailerModal(key) {
+                    DOM.trailerIframe.src = `https://www.youtube.com/embed/${key}?autoplay=1&rel=0`;
+                    DOM.trailerModal.classList.add('visible');
+                    requestAnimationFrame(() => DOM.closeTrailerBtn.focus());
+                },
+                closeTrailerModal() {
+                    DOM.trailerModal.classList.remove('visible');
+                    DOM.trailerIframe.src = '';
+                },
+                openPosterModal(posterPath) {
+                    if (!posterPath || posterPath === 'null' || posterPath === '') return;
+                    DOM.fullPosterImg.src = `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.original}${posterPath}`;
+                    DOM.posterModal.classList.add('visible');
+                    requestAnimationFrame(() => DOM.closePosterBtn.focus());
+                },
+                closePosterModal() {
+                    DOM.posterModal.classList.remove('visible');
+                    DOM.fullPosterImg.src = '';
+                },
             };
-            const displayEpisodes = (episodes) => {
-                const episodeListContainer = document.querySelector('.episode-list');
-                if (!episodeListContainer) return;
-                episodeListContainer.innerHTML = '';
-                if (episodes.length === 0) {
-                    episodeListContainer.innerHTML = `<p style="color: var(--secondary-text); text-align: center; padding: 1rem;">No episode data available for this season.</p>`;
-                    return;
-                }
-                const fragment = document.createDocumentFragment();
-                episodes.forEach(episode => {
-                    const item = document.createElement('div');
-                    item.className = 'episode-item';
-                    item.innerHTML = `<div class="episode-content"><p class="episode-meta">EPISODE ${episode.episode_number}</p><pre>${sanitizeText(episode.name)}</pre></div><button class="copy-btn" data-copy-text="${sanitizeText(episode.name)}" aria-label="Copy episode name">${copyIconSVG}</button>`;
-                    fragment.appendChild(item);
-                });
-                episodeListContainer.appendChild(fragment);
-            };
-            const updateCopyAllData = (episodes) => {
-                const copyAllBtn = document.getElementById('copy-all-toggle-btn');
-                const copyContainer = document.querySelector('.copy-container');
-                if (!copyAllBtn || !copyContainer || episodes.length === 0) return;
-                const namesOnly = episodes.map(e => e.name).join('\n');
-                const relevantEpisodeData = episodes.map(e => ({
-                    name: e.name,
-                    episode_number: e.episode_number
-                }));
-                copyContainer.dataset.episodesJson = JSON.stringify(relevantEpisodeData);
-                copyContainer.dataset.copyNames = namesOnly;
-                copyAllBtn.disabled = false;
-            };
-            const handleCopyClick = async (btn, textToCopy) => {
-                if (!textToCopy || btn.disabled) return;
-                const originalContentHTML = btn.innerHTML;
-                const feedbackDuration = 1200;
-                const performCopy = async () => {
+            const ClipboardHandler = {
+                async copy(btn, textToCopy) {
+                    if (!textToCopy || btn.disabled) return;
+                    Analytics.trackEvent('clipboard', 'copy', textToCopy.substring(0, 50));
+                    const originalContentHTML = btn.innerHTML;
+                    const feedbackDuration = 1200;
+                    let wasCopied = false;
                     try {
                         await navigator.clipboard.writeText(textToCopy);
-                        return true;
+                        wasCopied = true;
                     } catch (err) {
                         try {
                             const textArea = document.createElement("textarea");
@@ -1171,365 +1555,424 @@
                             document.body.appendChild(textArea);
                             textArea.focus();
                             textArea.select();
-                            const success = document.execCommand('copy');
+                            wasCopied = document.execCommand('copy');
                             document.body.removeChild(textArea);
-                            if (!success) throw new Error('Fallback copy failed');
-                            return true;
+                            if (!wasCopied) throw new Error('Fallback copy failed');
                         } catch (fallbackErr) {
-                            console.error('All copy methods failed:', fallbackErr);
-                            return false;
+                            Analytics.trackError(fallbackErr, 'clipboard_fallback');
                         }
                     }
-                };
-                btn.disabled = true;
-                const wasCopied = await performCopy();
-                if (wasCopied) {
-                    btn.innerHTML = checkIconSVG;
-                    btn.classList.add('copied');
-                } else {
-                    btn.innerHTML = errorIconSVG;
-                    btn.classList.add('error');
-                }
-                setTimeout(() => {
-                    btn.innerHTML = originalContentHTML;
-                    btn.classList.remove('copied', 'error');
-                    btn.disabled = false;
-                }, feedbackDuration);
-            };
-            const showToast = (message) => {
-                clearTimeout(state.toastTimer);
-                toastNotification.textContent = message;
-                toastNotification.classList.add('visible');
-                state.toastTimer = setTimeout(() => {
-                    toastNotification.classList.remove('visible');
-                }, 3000);
-            };
-            const fetchAndPlayTrailer = async (mediaId, mediaType) => {
-                const url = `https://api.themoviedb.org/3/${mediaType}/${mediaId}/videos?api_key=${CONFIG.apiKey}&language=en-US`;
-                const data = await fetchData(url);
-                if (data.error || !data.results || data.results.length === 0) {
-                    showToast('No trailer found.');
-                    return;
-                }
-                const trailer = data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube') ||
-                    data.results.find(v => v.type === 'Teaser' && v.site === 'YouTube') ||
-                    data.results.find(v => v.site === 'YouTube');
-                if (trailer) {
-                    trailerIframe.src = `https://www.youtube.com/embed/${trailer.key}?autoplay=1&rel=0`;
-                    trailerModal.classList.add('visible');
-                    requestAnimationFrame(() => {
-                        document.getElementById('close-trailer-btn').focus();
-                    });
-                } else {
-                    showToast('No trailer found.');
+                    btn.disabled = true;
+                    if (wasCopied) {
+                        btn.innerHTML = UI.checkIconSVG;
+                        btn.classList.add('copied');
+                    } else {
+                        btn.innerHTML = UI.errorIconSVG;
+                        btn.classList.add('error');
+                        UI.showToast('Failed to copy.');
+                    }
+                    setTimeout(() => {
+                        btn.innerHTML = originalContentHTML;
+                        btn.classList.remove('copied', 'error');
+                        btn.disabled = false;
+                    }, feedbackDuration);
                 }
             };
-            const closeTrailerModal = () => {
-                trailerModal.classList.remove('visible');
-                trailerIframe.src = '';
-            };
-            const openPosterModal = (posterPath) => {
-                if (!posterPath || posterPath === 'null') return;
-                fullPosterImg.src = `${CONFIG.imgBaseUrl}${CONFIG.imageSizes.original}${posterPath}`;
-                posterModal.classList.add('visible');
-                requestAnimationFrame(() => {
-                    document.getElementById('close-poster-btn').focus();
-                });
-            };
-            const closePosterModal = () => {
-                posterModal.classList.remove('visible');
-                fullPosterImg.src = '';
-            };
-            const toTitleCase = (str) => {
-                if (!str) return '';
-                const minorWords = new Set(['a', 'an', 'the', 'and', 'but', 'or', 'nor', 'for', 'so', 'yet', 'as', 'at', 'by', 'in', 'of', 'off', 'on', 'to', 'up']);
-                const capitalize = (word) => {
-                    if (word.length > 1 && word.toUpperCase() === word) return word;
-                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-                };
-                const words = str.split(' ');
-                return words.map((word, index) => {
-                    if (word === "") return "";
-                    const lowerWord = word.toLowerCase();
-                    if (index === 0 || index === words.length - 1) return capitalize(word);
-                    if (index > 0 && words[index - 1].endsWith(':')) return capitalize(word);
-                    if (word.includes('-')) return word.split('-').map((part, partIndex) => {
-                        if (partIndex === 0) return capitalize(part);
-                        if (minorWords.has(part.toLowerCase())) return part.toLowerCase();
-                        return capitalize(part);
-                    }).join('-');
-                    if (minorWords.has(lowerWord)) return lowerWord;
-                    return capitalize(word);
-                }).join(' ');
-            };
-            const handleCopyOptionsKeydown = (e) => {
-                const activeElement = document.activeElement;
-                if (!activeElement.classList.contains('copy-option')) return;
-                const currentMenu = activeElement.closest('.copy-options, .copy-options-level2');
-                if (!currentMenu) return;
-                const options = Array.from(currentMenu.querySelectorAll(':scope > .copy-option, :scope > .copy-option-submenu-container > .copy-option'));
-                const currentIndex = options.indexOf(activeElement);
-                switch (e.key) {
-                    case 'ArrowUp':
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        const direction = e.key === 'ArrowDown' ? 1 : -1;
-                        const nextIndex = (currentIndex + direction + options.length) % options.length;
-                        options[nextIndex]?.focus();
-                        break;
-                    case 'ArrowRight':
-                        if (activeElement.parentElement.classList.contains('copy-option-submenu-container')) {
-                            e.preventDefault();
-                            activeElement.nextElementSibling.querySelector('.copy-option')?.focus();
-                        }
-                        break;
-                    case 'ArrowLeft':
-                        if (currentMenu.classList.contains('copy-options-level2')) {
-                            e.preventDefault();
-                            currentMenu.parentElement.querySelector('.copy-option')?.focus();
-                        }
-                        break;
-                    case 'Enter':
-                        if (!activeElement.parentElement.classList.contains('copy-option-submenu-container')) activeElement.click();
-                        break;
-                    case 'Escape':
-                        e.preventDefault();
-                        if (currentMenu.classList.contains('copy-options-level2')) {
-                            currentMenu.parentElement.querySelector('.copy-option')?.focus();
+            const URLManager = {
+                update(type, id, title) {
+                    try {
+                        const url = new URL(window.location);
+                        url.searchParams.set('type', type);
+                        url.searchParams.set('id', id);
+                        window.history.pushState({
+                            type,
+                            id,
+                            title
+                        }, '', url);
+                    } catch (e) {
+                        console.warn("Could not update URL. Running in a sandboxed environment.");
+                    }
+                },
+                clear() {
+                     try {
+                        const url = new URL(window.location);
+                        url.search = '';
+                        window.history.pushState({}, '', url);
+                    } catch (e) {
+                         console.warn("Could not clear URL. Running in a sandboxed environment.");
+                    }
+                },
+                getParams() {
+                    const params = new URLSearchParams(window.location.search);
+                    return {
+                        type: params.get('type'),
+                        id: params.get('id')
+                    };
+                },
+                init() {
+                    window.addEventListener('popstate', (e) => {
+                        if (e.state?.type && e.state?.id) {
+                            API.getDetails(e.state.id, e.state.type);
                         } else {
-                            document.getElementById('copy-options').hidden = true;
-                            document.getElementById('copy-all-toggle-btn')?.focus();
+                            App.reset();
                         }
-                        break;
+                    });
+                    const {
+                        type,
+                        id
+                    } = this.getParams();
+                    if (type && id) {
+                        API.getDetails(id, type);
+                    } else {
+                        UI.displayRecentSearches();
+                    }
                 }
             };
-            const handleDropdown = (toggleBtn, optionsMenu) => {
-                if (toggleBtn.classList.contains('copied') || toggleBtn.classList.contains('error')) return;
-                const isHidden = optionsMenu.hidden;
-                const closeMenu = () => {
-                    optionsMenu.hidden = true;
-                    toggleBtn.classList.remove('dropdown-open');
-                    document.removeEventListener('click', handleOutsideClick);
-                    if (optionsMenu.id === 'copy-options') {
-                        optionsMenu.removeEventListener('keydown', handleCopyOptionsKeydown);
+            const App = {
+                init() {
+                    this.bindEventListeners();
+                    URLManager.init();
+                    if (!URLManager.getParams().id) {
+                        DOM.searchInput.focus();
                     }
-                };
-                const handleOutsideClick = (event) => {
-                    if (!toggleBtn.parentElement.contains(event.target)) {
+                },
+                reset() {
+                    DOM.searchInput.value = '';
+                    UI.clearSearchResults();
+                    DOM.detailsSection.innerHTML = '';
+                    DOM.clearSearchBtn.hidden = true;
+                    UI.displayRecentSearches();
+                    URLManager.clear();
+                },
+                closeSearchOnClickOutside(e) {
+                    if (!DOM.searchResults.hidden && !DOM.searchResults.contains(e.target) && e.target !== DOM.searchInput) {
+                        UI.clearSearchResults();
+                    }
+                },
+                toTitleCase(str) {
+                    if (!str) return '';
+                    const minorWords = new Set(['a', 'an', 'the', 'and', 'but', 'or', 'nor', 'for', 'so', 'yet', 'as', 'at', 'by', 'in', 'of', 'off', 'on', 'to', 'up']);
+                    const capitalize = (word) => {
+                        if (word.length > 1 && word.toUpperCase() === word) return word;
+                        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                    };
+                    const words = str.split(' ');
+                    return words.map((word, index) => {
+                        if (word === "") return "";
+                        const lowerWord = word.toLowerCase();
+                        if (index === 0 || index === words.length - 1) return capitalize(word);
+                        if (index > 0 && words[index - 1].endsWith(':')) return capitalize(word);
+                        if (word.includes('-')) return word.split('-').map((part, partIndex) => {
+                            if (partIndex === 0) return capitalize(part);
+                            if (minorWords.has(part.toLowerCase())) return part.toLowerCase();
+                            return capitalize(part);
+                        }).join('-');
+                        if (minorWords.has(lowerWord)) return lowerWord;
+                        return capitalize(word);
+                    }).join(' ');
+                },
+                handleDropdown(toggleBtn, optionsMenu) {
+                    if (toggleBtn.classList.contains('copied') || toggleBtn.classList.contains('error')) return;
+                    const isHidden = optionsMenu.hidden;
+                    const closeMenu = () => {
+                        optionsMenu.hidden = true;
+                        toggleBtn.classList.remove('dropdown-open');
+                        document.removeEventListener('click', handleOutsideClick);
+                        if (optionsMenu.id === 'copy-options') {
+                            optionsMenu.removeEventListener('keydown', App.handleCopyOptionsKeydown);
+                        }
+                    };
+                    const handleOutsideClick = (event) => {
+                        if (!toggleBtn.parentElement.contains(event.target)) {
+                            closeMenu();
+                        }
+                    };
+                    if (isHidden) {
+                        optionsMenu.hidden = false;
+                        toggleBtn.classList.add('dropdown-open');
+                        setTimeout(() => document.addEventListener('click', handleOutsideClick), 0);
+                        if (optionsMenu.id === 'copy-options') {
+                            optionsMenu.addEventListener('keydown', App.handleCopyOptionsKeydown);
+                        }
+                    } else {
                         closeMenu();
                     }
-                };
-                if (isHidden) {
-                    optionsMenu.hidden = false;
-                    toggleBtn.classList.add('dropdown-open');
-                    setTimeout(() => document.addEventListener('click', handleOutsideClick), 0);
-                    if (optionsMenu.id === 'copy-options') {
-                        optionsMenu.addEventListener('keydown', handleCopyOptionsKeydown);
+                },
+                handleCopyOptionsKeydown(e) {
+                    const activeElement = document.activeElement;
+                    if (!activeElement.classList.contains('copy-option')) return;
+                    const currentMenu = activeElement.closest('.copy-options, .copy-options-level2');
+                    if (!currentMenu) return;
+                    const options = Array.from(currentMenu.querySelectorAll(':scope > .copy-option, :scope > .copy-option-submenu-container > .copy-option'));
+                    const currentIndex = options.indexOf(activeElement);
+                    switch (e.key) {
+                        case 'ArrowUp':
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            const direction = e.key === 'ArrowDown' ? 1 : -1;
+                            const nextIndex = (currentIndex + direction + options.length) % options.length;
+                            options[nextIndex]?.focus();
+                            break;
+                        case 'ArrowRight':
+                            if (activeElement.parentElement.classList.contains('copy-option-submenu-container')) {
+                                e.preventDefault();
+                                activeElement.nextElementSibling.querySelector('.copy-option')?.focus();
+                            }
+                            break;
+                        case 'ArrowLeft':
+                            if (currentMenu.classList.contains('copy-options-level2')) {
+                                e.preventDefault();
+                                currentMenu.parentElement.querySelector('.copy-option')?.focus();
+                            }
+                            break;
+                        case 'Enter':
+                            if (!activeElement.parentElement.classList.contains('copy-option-submenu-container')) activeElement.click();
+                            break;
                     }
-                } else {
-                    closeMenu();
-                }
-            };
-            searchInput.addEventListener('input', () => {
-                const originalValue = searchInput.value;
-                const cursorPosition = searchInput.selectionStart;
-                const titleCasedValue = toTitleCase(originalValue);
-                if (originalValue !== titleCasedValue) {
-                    searchInput.value = titleCasedValue;
-                    searchInput.setSelectionRange(cursorPosition, cursorPosition);
-                }
-                clearTimeout(state.debounceTimer);
-                clearSearchBtn.hidden = searchInput.value.length === 0;
-                if (searchInput.value.length === 0) {
-                    clearSearchResults();
-                    return;
-                }
-                state.debounceTimer = setTimeout(() => {
-                    searchMedia(searchInput.value.trim());
-                }, CONFIG.debounceDelay);
-            });
-            searchInput.addEventListener('keydown', (e) => {
-                if (searchResults.hidden) return;
-                if (e.key === 'Escape') return clearSearchResults();
-                if (searchResultNodes.length === 0) return;
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    state.currentKeyboardFocus = (state.currentKeyboardFocus + 1) % searchResultNodes.length;
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    state.currentKeyboardFocus = (state.currentKeyboardFocus - 1 + searchResultNodes.length) % searchResultNodes.length;
-                } else if (e.key === 'Enter' && state.currentKeyboardFocus > -1) {
-                    e.preventDefault();
-                    searchResultNodes[state.currentKeyboardFocus].click();
-                    return;
-                } else {
-                    return;
-                }
-                setActiveResult();
-            });
-            const setActiveResult = () => {
-                searchResultNodes.forEach((item, index) => {
-                    if (index === state.currentKeyboardFocus) {
-                        item.classList.add('active');
-                        item.scrollIntoView({
-                            block: 'nearest'
-                        });
-                        searchInput.setAttribute('aria-activedescendant', item.id);
-                    } else {
-                        item.classList.remove('active');
-                    }
-                });
-            };
-            searchResults.addEventListener('click', (e) => {
-                const item = e.target.closest('.search-result-item');
-                if (!item) return;
-                const playBtn = e.target.closest('.play-trailer-btn');
-                if (playBtn) {
-                    fetchAndPlayTrailer(item.dataset.id, item.dataset.type);
-                    return;
-                }
-                const posterContainer = e.target.closest('.poster-container');
-                if (posterContainer) {
-                    const posterImg = posterContainer.querySelector('.poster-image');
-                    openPosterModal(posterImg.dataset.posterPath);
-                    return;
-                }
-                getMediaDetails(item.dataset.id, item.dataset.type);
-            });
-            detailsSection.addEventListener('click', (e) => {
-                const target = e.target;
-                const playBtn = target.closest('.play-trailer-btn');
-                const header = target.closest('.details-header');
-                if (playBtn && header) {
-                    fetchAndPlayTrailer(header.dataset.id, header.dataset.type);
-                    return;
-                }
-                const posterContainer = target.closest('.poster-container');
-                if (posterContainer) {
-                    const posterImg = posterContainer.querySelector('.poster-image');
-                    openPosterModal(posterImg.dataset.posterPath);
-                    return;
-                }
-                const copyBtn = target.closest('.copy-btn');
-                if (copyBtn) {
-                    if (copyBtn.closest('#download-options')) {
-                        e.stopPropagation();
-                    }
-                    handleCopyClick(copyBtn, copyBtn.dataset.copyText);
-                    return;
-                }
-                const copyAllToggleBtn = target.closest('#copy-all-toggle-btn');
-                if (copyAllToggleBtn) {
-                    handleDropdown(copyAllToggleBtn, document.getElementById('copy-options'));
-                    return;
-                }
-                const downloadToggleBtn = target.closest('#download-toggle-btn');
-                if (downloadToggleBtn) {
-                    handleDropdown(downloadToggleBtn, document.getElementById('download-options'));
-                    return;
-                }
-                const copyOptionBtn = target.closest('.copy-option');
-                if (copyOptionBtn) {
-                    if (copyOptionBtn.hasAttribute('aria-haspopup')) {
-                        e.preventDefault();
-                        const submenuContainer = copyOptionBtn.parentElement;
-                        if (submenuContainer.classList.contains('submenu-open')) {
-                            submenuContainer.classList.remove('submenu-open');
-                            copyOptionBtn.setAttribute('aria-expanded', 'false');
-                            copyOptionBtn.blur();
+                },
+                 handleSwipeToClose(modal, content, closeFn) {
+                    let startY = 0;
+                    let currentY = 0;
+                    let isDragging = false;
+                    
+                    const onTouchStart = (e) => {
+                        startY = e.touches[0].clientY;
+                        isDragging = true;
+                        content.style.transition = 'none';
+                    };
+                    
+                    const onTouchMove = (e) => {
+                        if (!isDragging) return;
+                        currentY = e.touches[0].clientY - startY;
+                        if (currentY > 0) { // Only allow swiping down
+                            content.style.transform = `scale(1) translateY(${currentY}px)`;
+                        }
+                    };
+                    
+                    const onTouchEnd = () => {
+                        isDragging = false;
+                        content.style.transition = 'transform 200ms ease';
+                        if (currentY > 100) { // Swipe threshold
+                            closeFn();
+                        }
+                        setTimeout(() => {
+                           content.style.transform = '';
+                           currentY = 0;
+                        }, 200);
+                    };
+                    
+                    modal.addEventListener('touchstart', onTouchStart, { passive: true });
+                    modal.addEventListener('touchmove', onTouchMove, { passive: true });
+                    modal.addEventListener('touchend', onTouchEnd, { passive: true });
+                },
+                bindEventListeners() {
+                    window.addEventListener('error', (e) => Analytics.trackError(e.error));
+                    DOM.titleButton.addEventListener('click', () => {
+                        this.reset();
+                        DOM.searchInput.focus();
+                    });
+                    DOM.clearSearchBtn.addEventListener('click', () => {
+                        this.reset();
+                        DOM.searchInput.focus();
+                    });
+                    DOM.searchInput.addEventListener('input', () => {
+                        DOM.searchInput.value = this.toTitleCase(DOM.searchInput.value);
+                        clearTimeout(State.debounceTimer);
+                        DOM.clearSearchBtn.hidden = DOM.searchInput.value.length === 0;
+                        State.debounceTimer = setTimeout(() => {
+                            API.search(DOM.searchInput.value.trim());
+                        }, CONFIG.debounceDelay);
+                    });
+                    DOM.searchInput.addEventListener('keydown', (e) => {
+                        if (DOM.searchResults.hidden || State.searchResultNodes.length === 0) return;
+                        if (e.key === 'Escape') return UI.clearSearchResults();
+                        const setActiveResult = () => {
+                            State.searchResultNodes.forEach((item, index) => {
+                                if (index === State.currentKeyboardFocus) {
+                                    item.classList.add('active');
+                                    item.scrollIntoView({
+                                        block: 'nearest'
+                                    });
+                                    DOM.searchInput.setAttribute('aria-activedescendant', item.id);
+                                } else {
+                                    item.classList.remove('active');
+                                }
+                            });
+                        };
+                        if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            State.currentKeyboardFocus = (State.currentKeyboardFocus + 1) % State.searchResultNodes.length;
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            State.currentKeyboardFocus = (State.currentKeyboardFocus - 1 + State.searchResultNodes.length) % State.searchResultNodes.length;
+                        } else if (e.key === 'Enter' && State.currentKeyboardFocus > -1) {
+                            e.preventDefault();
+                            State.searchResultNodes[State.currentKeyboardFocus].click();
+                            return;
                         } else {
-                            submenuContainer.classList.add('submenu-open');
-                            copyOptionBtn.setAttribute('aria-expanded', 'true');
+                            return;
                         }
-                        return;
-                    }
-                    const copyContainer = target.closest('.copy-container');
-                    const copyType = copyOptionBtn.dataset.copyType;
-                    let textToCopy;
-                    if (copyType === CONFIG.copyTypes.names) {
-                        textToCopy = copyContainer.dataset.copyNames;
-                    } else if (copyType === CONFIG.copyTypes.rename) {
-                        const extension = copyOptionBtn.dataset.extension;
-                        const episodes = JSON.parse(copyContainer.dataset.episodesJson);
-                        textToCopy = episodes.map(e => `E${String(e.episode_number).padStart(2, '0')} - ${e.name}.${extension}`).join('\n');
-                    }
-                    if (textToCopy) {
-                        const copyAllBtn = document.getElementById('copy-all-toggle-btn');
-                        document.getElementById('copy-options').hidden = true;
-                        copyAllBtn.classList.remove('dropdown-open');
-                        handleCopyClick(copyAllBtn, textToCopy);
-                    }
-                }
-            });
-            detailsSection.addEventListener('change', (e) => {
-                if (e.target.id === 'season-select') {
-                    getSeasonDetails(e.target.dataset.tvId, e.target.value);
-                }
-            });
-            const clearSearchInput = () => {
-                searchInput.value = '';
-                clearSearchResults();
-                announcer.textContent = 'Search input cleared.';
-                clearSearchBtn.hidden = true;
-                searchInput.focus();
-            };
-            const resetApp = () => {
-                clearSearchInput();
-                detailsSection.innerHTML = '';
-            };
-            clearSearchBtn.addEventListener('click', clearSearchInput);
-            titleButton.addEventListener('click', resetApp);
-            document.getElementById('close-trailer-btn').addEventListener('click', closeTrailerModal);
-            trailerModal.addEventListener('click', (e) => {
-                if (e.target === trailerModal) closeTrailerModal();
-            });
-            document.getElementById('close-poster-btn').addEventListener('click', closePosterModal);
-            posterModal.addEventListener('click', (e) => {
-                if (e.target === posterModal) closePosterModal();
-            });
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    searchInput.classList.add('search-focus-flash');
-                    searchInput.focus();
-                    setTimeout(() => searchInput.classList.remove('search-focus-flash'), 500);
-                }
-                if (e.key === 'Escape') {
-                    if (trailerModal.classList.contains('visible')) {
-                        closeTrailerModal();
-                        return;
-                    }
-                    if (posterModal.classList.contains('visible')) {
-                        closePosterModal();
-                        return;
-                    }
-                    const downloadOptions = document.getElementById('download-options');
-                    if (downloadOptions && !downloadOptions.hidden) {
-                        const btn = document.getElementById('download-toggle-btn');
-                        downloadOptions.hidden = true;
-                        btn.classList.remove('dropdown-open');
-                        btn.focus();
-                        return;
-                    }
-                    const copyOptions = document.getElementById('copy-options');
-                    if (copyOptions && !copyOptions.hidden) {
-                        const btn = document.getElementById('copy-all-toggle-btn');
-                        const openSubmenu = copyOptions.querySelector('.submenu-open');
-                        if (openSubmenu) {
-                            openSubmenu.classList.remove('submenu-open');
-                            openSubmenu.querySelector('[aria-haspopup]').setAttribute('aria-expanded', 'false');
+                        setActiveResult();
+                    });
+                    let touchStartY = 0;
+                    let touchStartTime = 0;
+                    DOM.searchResults.addEventListener('touchstart', (e) => {
+                        touchStartY = e.touches[0].clientY;
+                        touchStartTime = Date.now();
+                    }, {
+                        passive: true
+                    });
+                    DOM.searchResults.addEventListener('touchend', (e) => {
+                        const touchEndY = e.changedTouches[0].clientY;
+                        const touchDuration = Date.now() - touchStartTime;
+                        const distance = Math.abs(touchEndY - touchStartY);
+                        if (distance < 10 && touchDuration < 200) {
+                            const target = document.elementFromPoint(
+                                e.changedTouches[0].clientX,
+                                e.changedTouches[0].clientY
+                            );
+                            const item = target?.closest('.search-result-item');
+                            if (item) item.click();
                         }
-                        copyOptions.hidden = true;
-                        btn.classList.remove('dropdown-open');
-                        btn.focus();
-                        return;
-                    }
-                    if (!searchResults.hidden) {
-                        clearSearchResults();
-                    }
+                    }, {
+                        passive: true
+                    });
+                    DOM.searchResults.addEventListener('click', (e) => {
+                        const item = e.target.closest('.search-result-item');
+                        if (!item) return;
+                        if (e.target.closest('.play-trailer-btn')) {
+                            API.getTrailer(item.dataset.id, item.dataset.type);
+                        } else if (e.target.closest('.poster-container')) {
+                            const posterPath = item.querySelector('.poster-image').dataset.posterPath;
+                            if (posterPath && posterPath !== '') {
+                                UI.openPosterModal(posterPath);
+                            } else {
+                                API.getDetails(item.dataset.id, item.dataset.type);
+                            }
+                        } else {
+                            API.getDetails(item.dataset.id, item.dataset.type);
+                        }
+                    });
+                    DOM.detailsSection.addEventListener('click', (e) => {
+                        const target = e.target;
+                        const recentItem = target.closest('.recent-item');
+                        if (recentItem) {
+                            API.getDetails(recentItem.dataset.id, recentItem.dataset.type);
+                            return;
+                        }
+                        const copyBtn = target.closest('.copy-btn');
+                        if (copyBtn) {
+                            if (copyBtn.closest('#download-options')) {
+                                e.stopPropagation();
+                            }
+                            ClipboardHandler.copy(copyBtn, copyBtn.dataset.copyText);
+                            return;
+                        }
+                        const playBtn = target.closest('.play-trailer-btn');
+                        if (playBtn) {
+                            const header = target.closest('.details-header');
+                            if (header) API.getTrailer(header.dataset.id, header.dataset.type);
+                            return;
+                        }
+                        const posterContainer = target.closest('.poster-container');
+                        if (posterContainer) {
+                            UI.openPosterModal(posterContainer.querySelector('.poster-image').dataset.posterPath);
+                            return;
+                        }
+                        const copyAllToggleBtn = target.closest('#copy-all-toggle-btn');
+                        if (copyAllToggleBtn) {
+                            this.handleDropdown(copyAllToggleBtn, document.getElementById('copy-options'));
+                            return;
+                        }
+                        const downloadToggleBtn = target.closest('#download-toggle-btn');
+                        if (downloadToggleBtn) {
+                            this.handleDropdown(downloadToggleBtn, document.getElementById('download-options'));
+                            return;
+                        }
+                        const copyOptionBtn = target.closest('.copy-option');
+                        if (copyOptionBtn) {
+                            if (copyOptionBtn.hasAttribute('aria-haspopup')) {
+                                e.preventDefault();
+                                const submenuContainer = copyOptionBtn.parentElement;
+                                submenuContainer.classList.toggle('submenu-open');
+                                copyOptionBtn.setAttribute('aria-expanded', submenuContainer.classList.contains('submenu-open'));
+                                return;
+                            }
+                            const copyContainer = target.closest('.copy-container');
+                            const copyType = copyOptionBtn.dataset.copyType;
+                            let textToCopy;
+                            if (copyType === CONFIG.copyTypes.names) {
+                                textToCopy = copyContainer.dataset.copyNames;
+                            } else if (copyType === CONFIG.copyTypes.rename) {
+                                const extension = copyOptionBtn.dataset.extension;
+                                const episodes = JSON.parse(copyContainer.dataset.episodesJson);
+                                textToCopy = episodes.map(e => `E${String(e.episode_number).padStart(2, '0')} - ${e.name}.${extension}`).join('\n');
+                            }
+                            if (textToCopy) {
+                                const copyAllBtn = document.getElementById('copy-all-toggle-btn');
+                                document.getElementById('copy-options').hidden = true;
+                                copyAllBtn.classList.remove('dropdown-open');
+                                ClipboardHandler.copy(copyAllBtn, textToCopy);
+                            }
+                        }
+                    });
+                    DOM.detailsSection.addEventListener('change', (e) => {
+                        if (e.target.id === 'season-select') {
+                            API.getSeasonDetails(e.target.dataset.tvId, e.target.value);
+                        }
+                    });
+                    DOM.closeTrailerBtn.addEventListener('click', UI.closeTrailerModal);
+                    DOM.trailerModal.addEventListener('click', (e) => {
+                        if (e.target === DOM.trailerModal) UI.closeTrailerModal();
+                    });
+                    DOM.trailerModal.addEventListener('keydown', (e) => {
+                        if (e.key === 'Tab') {
+                            e.preventDefault();
+                            DOM.closeTrailerBtn.focus();
+                        }
+                    });
+                    DOM.closePosterBtn.addEventListener('click', UI.closePosterModal);
+                    DOM.posterModal.addEventListener('click', (e) => {
+                        if (e.target === DOM.posterModal) UI.closePosterModal();
+                    });
+                    DOM.posterModal.addEventListener('keydown', (e) => {
+                        if (e.key === 'Tab') {
+                            e.preventDefault();
+                            DOM.closePosterBtn.focus();
+                        }
+                    });
+                     DOM.closeShortcutsBtn.addEventListener('click', () => {
+                        DOM.shortcutsModal.hidden = true;
+                    });
+                    DOM.shortcutsModal.addEventListener('click', (e) => {
+                        if (e.target === DOM.shortcutsModal) DOM.shortcutsModal.hidden = true;
+                    });
+                    this.handleSwipeToClose(DOM.trailerModal, DOM.trailerModal.querySelector('.trailer-container'), UI.closeTrailerModal);
+                    this.handleSwipeToClose(DOM.posterModal, DOM.posterModal.querySelector('.poster-modal-content'), UI.closePosterModal);
+                    this.handleSwipeToClose(DOM.shortcutsModal, DOM.shortcutsModal.querySelector('.shortcuts-content'), () => DOM.shortcutsModal.hidden = true);
+                    window.addEventListener('keydown', (e) => {
+                        if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+                            e.preventDefault();
+                            DOM.searchInput.classList.add('search-focus-flash');
+                            DOM.searchInput.focus();
+                            setTimeout(() => DOM.searchInput.classList.remove('search-focus-flash'), 500);
+                        }
+                         if (e.key === '?' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                            e.preventDefault();
+                            DOM.shortcutsModal.hidden = !DOM.shortcutsModal.hidden;
+                        }
+                        if (e.key === 'Escape') {
+                            if (!DOM.shortcutsModal.hidden) return DOM.shortcutsModal.hidden = true;
+                            if (DOM.trailerModal.classList.contains('visible')) return UI.closeTrailerModal();
+                            if (DOM.posterModal.classList.contains('visible')) return UI.closePosterModal();
+                            const activeDropdown = document.querySelector('.dropdown-open');
+                            if (activeDropdown) return activeDropdown.click();
+                            if (!DOM.searchResults.hidden) return UI.clearSearchResults();
+                        }
+                    });
                 }
-            });
-            searchInput.focus();
+            };
+            App.init();
         })();
     </script>
 </body>
