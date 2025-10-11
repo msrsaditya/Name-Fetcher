@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://image.tmdb.org; connect-src 'self' https://api.themoviedb.org; frame-src https://www.youtube.com;">
     <meta name="description" content="Copy original episode and movie names with formatting for use in local personal media libraries">
     <meta name="theme-color" content="#030712">
     <title>The Media Library</title>
@@ -498,6 +499,7 @@
         .episode-list {
             outline: none;
             margin-top: 1rem;
+            -webkit-overflow-scrolling: touch;
         }
         .episode-list .episode-item {
             display: flex;
@@ -686,10 +688,27 @@
             padding: 0.25rem 0.5rem;
             font-size: 0.875rem;
         }
-         .recent-searches h2 {
-            font-size: 1.25rem;
+         .recent-searches-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 1rem;
+        }
+        .recent-searches h2 {
+            font-size: 1.25rem;
             color: var(--secondary-text);
+            margin-bottom: 0;
+        }
+        #clear-history-btn {
+            font-size: 0.875rem;
+            color: var(--secondary-text);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        #clear-history-btn:hover {
+            color: var(--accent-text);
         }
         .recent-items-grid {
             display: flex;
@@ -914,7 +933,7 @@
         <main id="mainContent">
             <div id="searchSection">
                 <div class="search-container">
-                    <input type="text" id="searchInput" placeholder="Search for a Movie or TV Show..." aria-label="Search for a Movie or TV Show" autocomplete="off" aria-controls="searchResults" aria-autocomplete="list" autofocus>
+                    <input type="text" id="searchInput" placeholder="Search for a Movie or TV Show..." aria-label="Search for a Movie or TV Show" autocomplete="off" aria-controls="searchResults" aria-autocomplete="list" maxlength="100" autofocus>
                     <div class="search-adornment">
                         <button type="button" id="clearSearchBtn" class="clear-search-btn" aria-label="Clear search" hidden>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -1052,13 +1071,7 @@
                 },
             };
             const Analytics = {
-                trackEvent(category, action, label) {
-                    console.log('Event Tracked:', {
-                        category,
-                        action,
-                        label
-                    });
-                },
+                trackEvent(category, action, label) {},
                 trackError(error, context = 'global') {
                     console.error(`Error [${context}]:`, error);
                 }
@@ -1066,31 +1079,39 @@
             const API = {
                 async fetchData(url, signal) {
                     DOM.mainLoader.hidden = false;
-                    try {
-                        const response = await fetch(url, { signal });
-                        if (!response.ok) {
-                            if (response.status === 429) throw new Error('Rate limit exceeded. Please wait a moment.');
-                            if (response.status === 404) throw new Error('The requested content could not be found.');
-                            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                    let lastError;
+                    for (let i = 0; i < 3; i++) {
+                        try {
+                            const response = await fetch(url, { signal });
+                            if (!response.ok) {
+                                if (response.status === 429) throw new Error('Rate limit exceeded. Please wait a moment.');
+                                if (response.status === 404) throw new Error('The requested content could not be found.');
+                                if (response.status >= 500) {
+                                    throw new Error('Server error, retrying...');
+                                }
+                                throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                            }
+                            DOM.mainLoader.hidden = true;
+                            return await response.json();
+                        } catch (error) {
+                            lastError = error;
+                            if (error.name === 'AbortError') {
+                                console.log('Fetch aborted');
+                                DOM.mainLoader.hidden = true;
+                                return { aborted: true };
+                            }
+                            if (i === 2 || !error.message.includes('retrying')) {
+                                break;
+                            }
+                            await new Promise(res => setTimeout(res, 1000 * (i + 1)));
                         }
-                        return await response.json();
-                    } catch (error) {
-                        if (error.name === 'AbortError') {
-                            console.log('Fetch aborted');
-                            return { aborted: true };
-                        }
-                        Analytics.trackError(error, 'fetch');
-                        if (error.message.includes('Failed to fetch')) {
-                            return {
-                                error: "Network error. Please check your connection and try again."
-                            };
-                        }
-                        return {
-                            error: error.message
-                        };
-                    } finally {
-                        DOM.mainLoader.hidden = true;
                     }
+                    DOM.mainLoader.hidden = true;
+                    Analytics.trackError(lastError, 'fetch');
+                    if (lastError.message.includes('Failed to fetch')) {
+                        return { error: "Network error. Please check your connection." };
+                    }
+                    return { error: lastError.message.replace(', retrying...', '') };
                 },
                 async fetchWithCache(url, signal) {
                     const cached = Cache.get(url);
@@ -1343,8 +1364,8 @@
                         type: 'language'
                     }).of(movie.original_language) : 'N/A';
                     const rating = movie.vote_count > 0 ? `${movie.vote_average.toFixed(1)} / 10 (${movie.vote_count.toLocaleString()} votes)` : 'N/A';
-                    const genres = movie.genres.map(g => g.name).join(', ');
-                    const cast = credits.cast.slice(0, 6).map(c => c.name).join(', ');
+                    const genres = this.sanitizeText(movie.genres.map(g => g.name).join(', '));
+                    const cast = this.sanitizeText(credits.cast.slice(0, 6).map(c => c.name).join(', '));
                     const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : 'N/A';
                     DOM.detailsSection.innerHTML = `
                     <div class="details-header" data-id="${movie.id}" data-type="movie">
@@ -1381,9 +1402,9 @@
                         type: 'language'
                     }).of(tvShow.original_language) : 'N/A';
                     const rating = tvShow.vote_count > 0 ? `${tvShow.vote_average.toFixed(1)} / 10 (${tvShow.vote_count.toLocaleString()} votes)` : 'N/A';
-                    const genres = tvShow.genres.map(g => g.name).join(', ');
-                    const cast = credits.cast.slice(0, 6).map(c => c.name).join(', ');
-                    const createdBy = tvShow.created_by.map(c => c.name).join(', ');
+                    const genres = this.sanitizeText(tvShow.genres.map(g => g.name).join(', '));
+                    const cast = this.sanitizeText(credits.cast.slice(0, 6).map(c => c.name).join(', '));
+                    const createdBy = this.sanitizeText(tvShow.created_by.map(c => c.name).join(', '));
                     const sortedSeasons = tvShow.seasons.sort((a, b) => a.season_number - b.season_number);
                     const seasonOptions = sortedSeasons.map(season => `<option value="${season.season_number}">${this.sanitizeText(season.name)}</option>`).join('');
                     DOM.detailsSection.innerHTML = `
@@ -1590,7 +1611,7 @@
                             title
                         }, '', url);
                     } catch (e) {
-                        console.warn("Could not update URL. Running in a sandboxed environment.");
+                        
                     }
                 },
                 clear() {
@@ -1599,7 +1620,7 @@
                         url.search = '';
                         window.history.pushState({}, '', url);
                     } catch (e) {
-                         console.warn("Could not clear URL. Running in a sandboxed environment.");
+                         
                     }
                 },
                 getParams() {
@@ -1767,6 +1788,11 @@
                 },
                 bindEventListeners() {
                     window.addEventListener('error', (e) => Analytics.trackError(e.error));
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.visibilityState === 'visible') {
+                            Cache.data.clear();
+                        }
+                    });
                     DOM.titleButton.addEventListener('click', () => {
                         this.reset();
                         DOM.searchInput.focus();
