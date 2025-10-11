@@ -1188,9 +1188,9 @@
                         UI.observeImages();
                         requestAnimationFrame(() => {
                             if (type === CONFIG.mediaTypes.movie) {
-                                DOM.detailsSection.querySelector('.copy-btn')?.focus();
+                                DOM.detailsSection.querySelector('.copy-btn')?.focus({ preventScroll: true });
                             } else {
-                                document.getElementById('season-select')?.focus();
+                                document.getElementById('season-select')?.focus({ preventScroll: true });
                             }
                         });
                     }
