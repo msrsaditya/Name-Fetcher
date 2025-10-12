@@ -980,11 +980,11 @@
             </button>
             <h3 id="shortcuts-title">Keyboard Shortcuts</h3>
             <ul>
-                <li><span>Focus search</span><kbd>Ctrl/Cmd + K</kbd></li>
-                <li><span>Close modals/dropdowns</span><kbd>Esc</kbd></li>
-                <li><span>Navigate results</span><kbd>↑/↓</kbd></li>
-                <li><span>Select result</span><kbd>Enter</kbd></li>
-                <li><span>Show this help</span><kbd>?</kbd></li>
+                <li><span>Focus Search</span><kbd>Ctrl/Cmd + K</kbd></li>
+                <li><span>Close Modals/Dropdowns</span><kbd>Esc</kbd></li>
+                <li><span>Navigate Results</span><kbd>↑/↓</kbd></li>
+                <li><span>Select Result</span><kbd>Enter</kbd></li>
+                <li><span>Show this Help</span><kbd>?</kbd></li>
             </ul>
         </div>
     </div>
@@ -1537,14 +1537,28 @@
                         DOM.toastNotification.classList.remove('visible');
                     }, 3000);
                 },
+                _boundHandleTrailerEvents: null,
+                handleTrailerEvents(e) {
+                    if (e.type === 'keydown' && e.key === 'Escape') {
+                        this.closeTrailerModal();
+                    }
+                    if (e.type === 'click' && e.target === DOM.trailerModal) {
+                        this.closeTrailerModal();
+                    }
+                },
                 openTrailerModal(key) {
-                    DOM.trailerIframe.src = `https://www.youtube.com/embed/${key}?autoplay=1&rel=0`;
+                    DOM.trailerIframe.src = `https://www.youtube.com/embed/${key}?autoplay=1&rel=0&iv_load_policy=3&cc_load_policy=1&cc_lang_pref=en&hl=en`;
                     DOM.trailerModal.classList.add('visible');
                     requestAnimationFrame(() => DOM.closeTrailerBtn.focus());
+                    this._boundHandleTrailerEvents = this.handleTrailerEvents.bind(this);
+                    document.addEventListener('keydown', this._boundHandleTrailerEvents);
+                    DOM.trailerModal.addEventListener('click', this._boundHandleTrailerEvents);
                 },
                 closeTrailerModal() {
                     DOM.trailerModal.classList.remove('visible');
                     DOM.trailerIframe.src = '';
+                    document.removeEventListener('keydown', this._boundHandleTrailerEvents);
+                    DOM.trailerModal.removeEventListener('click', this._boundHandleTrailerEvents);
                 },
                 openPosterModal(posterPath) {
                     if (!posterPath || posterPath === 'null' || posterPath === '') return;
@@ -1948,9 +1962,6 @@
                         }
                     });
                     DOM.closeTrailerBtn.addEventListener('click', UI.closeTrailerModal);
-                    DOM.trailerModal.addEventListener('click', (e) => {
-                        if (e.target === DOM.trailerModal) UI.closeTrailerModal();
-                    });
                     DOM.trailerModal.addEventListener('keydown', (e) => {
                         if (e.key === 'Tab') {
                             e.preventDefault();
@@ -1989,7 +2000,6 @@
                         }
                         if (e.key === 'Escape') {
                             if (!DOM.shortcutsModal.hidden) return DOM.shortcutsModal.hidden = true;
-                            if (DOM.trailerModal.classList.contains('visible')) return UI.closeTrailerModal();
                             if (DOM.posterModal.classList.contains('visible')) return UI.closePosterModal();
                             const activeDropdown = document.querySelector('.dropdown-open');
                             if (activeDropdown) return activeDropdown.click();
